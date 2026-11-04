@@ -14,7 +14,7 @@
 | Interfaz de Flet | 8 secciones: Clientes, Mascotas, Turnos, Consultas, Empaquetado, Envíos, Laboratorio y Reportes |
 | Reportes | Los 5 prometidos, en pantalla y en PDF con gráficos |
 | Datos de demostración | `cargar_demo.py`, a pedido |
-| Tests | 244 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.14) |
+| Tests | 244 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.11 y 3.14) |
 
 ## Cómo se verificó
 

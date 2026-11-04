@@ -6,7 +6,7 @@ El alcance, el estado, las decisiones y la arquitectura están en [docs/](docs/R
 
 ## Levantar el proyecto después de descargarlo
 
-Requiere Python 3.14. Los comandos son para Windows y se ejecutan una sola vez, salvo los de los pasos 3 y 5. Son iguales en Git Bash y en PowerShell, salvo la activación del paso 3, que cambia según la terminal.
+Requiere Python 3.11 o superior; las dependencias y los tests se verificaron con Python 3.11 y 3.14. Los comandos son para Windows y se ejecutan una sola vez, salvo los de los pasos 3 y 5. Son iguales en Git Bash y en PowerShell, salvo la activación del paso 3, que cambia según la terminal.
 
 **1. Entrar a la carpeta del proyecto**
 
@@ -15,8 +15,10 @@ Abrí la terminal en la carpeta donde está este archivo `README.md`.
 **2. Crear el entorno virtual**
 
 ```bash
-python -m venv .venv
+py -3.11 -m venv .venv
 ```
+
+Si tenés Python 3.14, también podés usar `py -3.14 -m venv .venv`. Si `.venv` ya existe y fue creado con una versión anterior, eliminá esa carpeta antes de crear el entorno nuevo.
 
 **3. Activar el entorno virtual**
 
@@ -41,6 +43,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 **No sigas hasta ver `(.venv)` al inicio de la línea de la terminal.** Si no aparece, el paso siguiente instala todo en el Python global en lugar de en el proyecto.
+
+Comprobá también que `python --version` indique Python 3.11 o superior. Activar un `.venv` creado con Python 3.6 no lo actualiza.
 
 **4. Instalar las dependencias**
 
