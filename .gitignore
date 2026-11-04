@@ -1,0 +1,35 @@
+# Entorno virtual: cada integrante crea el suyo con requirements.txt
+.venv/
+venv/
+
+# Archivos generados por Python y pytest
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Base de datos local: main.py la crea con los datos de ejemplo
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# PDF generados por la aplicación
+reportes_generados/
+
+# Compilaciones y datos locales de Flet
+build/
+dist/
+storage/
+
+# Variables de entorno locales
+.env
+
+# Editores y configuración personal
+.vscode/
+.idea/
+.claude/settings.local.json
+
+# Archivos del sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
