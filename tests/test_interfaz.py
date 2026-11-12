@@ -123,6 +123,151 @@ def test_clientes_alta_edicion_y_baja(app):
     assert len(pantalla.tabla.rows) == 3
 
 
+def test_el_alta_se_hace_en_una_ventana_que_muestra_sus_errores(app):
+    pantalla = abrir(app, CLIENTES)
+    pantalla.nuevo(None)
+    assert pantalla.dialogo.ventana.open
+    pantalla.guardar(None)
+    assert "DNI" in pantalla.dialogo.error.value
+    assert pantalla.mensaje.value == ""
+    assert pantalla.dialogo.ventana.open
+
+    pantalla.dni.value = "40111222"
+    pantalla.nombre.value = "Marta"
+    pantalla.apellido.value = "Paz"
+    pantalla.guardar(None)
+    assert not pantalla.dialogo.ventana.open
+    assert pantalla.mensaje.color == VERDE
+
+
+def test_turno_nuevo_exige_elegir_el_veterinario(app):
+    pantalla = abrir(app, TURNOS)
+    pantalla.nuevo(None)
+    assert not pantalla.dialogo.ventana.open
+    assert pantalla.mensaje.color == ROJO
+    elegir_por_texto(pantalla.veterinario, "Gómez")
+    pantalla.nuevo(None)
+    assert pantalla.dialogo.ventana.open
+
+
+def test_las_fechas_se_eligen_con_calendario_y_reloj(app):
+    turnos = abrir(app, TURNOS)
+    assert turnos.inicio.read_only
+    assert len(turnos.inicio.suffix_icon.controls) == 2  # calendario y reloj
+    reportes = abrir(app, len(app.pantallas) - 1)
+    assert reportes.desde.read_only
+    assert len(reportes.desde.suffix_icon.controls) == 2  # calendario y borrar
+
+
+def test_los_campos_numericos_filtran_lo_que_se_tipea(app):
+    from interfaz.pantalla import NUMERO_CON_SIGNO, NUMERO_DECIMAL, SOLO_DIGITOS, TELEFONO
+
+    clientes = app.pantallas[CLIENTES]
+    assert clientes.dni.input_filter is SOLO_DIGITOS
+    assert clientes.dni.max_length == 8
+    assert clientes.telefono.input_filter is TELEFONO
+    assert app.pantallas[MASCOTAS].peso.input_filter is NUMERO_DECIMAL
+    assert app.pantallas[CONSULTAS].precio.input_filter is NUMERO_DECIMAL
+    assert app.pantallas[ENVIOS].temperatura.input_filter is NUMERO_CON_SIGNO
+    assert app.pantallas[ENVIOS].temp_llegada.input_filter is NUMERO_CON_SIGNO
+
+
+def test_al_guardar_desde_una_ventana_se_redibuja_la_pagina(app):
+    class PaginaFalsa:
+        def __init__(self):
+            self.actualizaciones = 0
+
+        def update(self):
+            self.actualizaciones += 1
+
+        def show_dialog(self, dialogo):
+            pass
+
+        def pop_dialog(self):
+            pass
+
+    pagina = PaginaFalsa()
+    pantalla = abrir(app, CLIENTES)
+    pantalla.pagina = pagina
+    pantalla.nuevo(None)
+    pantalla.dni.value = "40111222"
+    pantalla.nombre.value = "Marta"
+    pantalla.apellido.value = "Paz"
+    pantalla.guardar(None)
+    assert pagina.actualizaciones == 1
+    assert len(pantalla.tabla.rows) == 4
+
+
+def test_los_campos_obligatorios_de_mascota_tienen_asterisco(app):
+    pantalla = app.pantallas[MASCOTAS]
+    for control in (pantalla.cliente, pantalla.especie, pantalla.nombre):
+        assert control.label.endswith("*")
+    for control in (pantalla.raza, pantalla.sexo, pantalla.fecha_nacimiento, pantalla.peso, pantalla.antecedentes):
+        assert not control.label.endswith("*")
+
+
+def test_el_calendario_de_hasta_no_ofrece_dias_anteriores_a_desde(app):
+    from datetime import datetime
+    from types import SimpleNamespace
+
+    abiertos = []
+    pagina = SimpleNamespace(show_dialog=abiertos.append)
+    evento = SimpleNamespace(control=SimpleNamespace(page=pagina))
+
+    reportes = app.pantallas[len(app.pantallas) - 1]
+    reportes.desde.value = "2026-11-10"
+    reportes.hasta.value = "2026-11-01"
+    reportes.hasta.on_click(evento)
+    calendario = abiertos[-1]
+    assert calendario.first_date == datetime(2026, 11, 10)
+    assert calendario.value == datetime(2026, 11, 10)
+
+    turnos = app.pantallas[TURNOS]
+    turnos.inicio.value = "2026-11-20 10:00"
+    turnos.fin.on_click(evento)
+    assert abiertos[-1].first_date == datetime(2026, 11, 20)
+
+
+def test_una_ventana_nueva_no_muestra_lo_cargado_antes(app):
+    envios = app.pantallas[ENVIOS]
+    envios.precinto.value = "Roto"
+    envios.recibido_por.value = "Alguien"
+    envios.nueva_recepcion(None)
+    assert envios.precinto.value is None
+    assert envios.recibido_por.value == ""
+
+    consultas = abrir(app, CONSULTAS)
+    elegir_por_texto(consultas.analisis, "Hemograma")
+    consultas.agregar_muestra(None)
+    consultas.responsable.value = "Laura"
+    consultas.nueva_orden(None)
+    assert consultas.muestras_de_orden == []
+    assert consultas.responsable.value == ""
+
+
+def test_un_doble_clic_no_abre_la_ventana_dos_veces(app):
+    from types import SimpleNamespace
+
+    abiertas = []
+    pantalla = abrir(app, CLIENTES)
+    pantalla.pagina = SimpleNamespace(show_dialog=abiertas.append, update=lambda: None)
+    pantalla.nuevo(None)
+    pantalla.nuevo(None)
+    assert len(abiertas) == 1
+
+
+def test_las_muestras_agregadas_se_ven_en_lista_y_se_pueden_quitar(app):
+    pantalla = abrir(app, CONSULTAS)
+    for nombre in ("Hemograma", "Perfil"):
+        elegir_por_texto(pantalla.analisis, nombre)
+        pantalla.agregar_muestra(None)
+    assert len(pantalla.lista_muestras.controls) == 2
+    assert "Hemograma" in pantalla.lista_muestras.controls[0].controls[1].value
+    pantalla.quitar_muestra(0)
+    assert len(pantalla.muestras_de_orden) == 1
+    assert "Perfil" in pantalla.lista_muestras.controls[0].controls[1].value
+
+
 def test_clientes_muestra_los_errores_del_negocio(app):
     pantalla = abrir(app, CLIENTES)
     pantalla.dni.value = "30000001"
@@ -228,7 +373,8 @@ def test_consulta_con_turno_y_vacuna_informa_el_esquema(app):
     elegir_por_texto(pantalla.vacuna, "Antirrábica")
     pantalla.lote.value = "L-1"
     pantalla.agregar_vacuna(None)
-    assert "Antirrábica" in pantalla.lista_vacunas.value
+    renglon = pantalla.lista_vacunas.controls[0]
+    assert "Antirrábica - lote L-1" in renglon.controls[1].value
     elegir_por_texto(pantalla.veterinario, "Gómez")
     pantalla.tipo.value = "Control"
     pantalla.fecha.value = "2026-11-03 10:05"
@@ -304,6 +450,7 @@ def test_recorrido_completo_con_precinto_intacto(app, ruta):
 
     laboratorio = abrir(app, LABORATORIO)
     assert len(laboratorio.muestra.options) == 2
+    assert len(laboratorio.tabla_muestras.rows) == 2
     for valores in ("Hto 45%", "Glucosa 90"):
         laboratorio.muestra.value = laboratorio.muestra.options[0].key
         laboratorio.profesional.value = "Bioquímica"
@@ -318,6 +465,15 @@ def test_recorrido_completo_con_precinto_intacto(app, ruta):
     laboratorio.emitir_comprobante(None)
     assert laboratorio.total.value == "Total: $ 63000.00"
     assert len(laboratorio.tabla.rows) == 3
+    assert len(laboratorio.tabla_comprobantes.rows) == 1
+    assert laboratorio.tabla_muestras.rows == []
+
+    laboratorio.busqueda.value = "Sosa"
+    laboratorio.buscar(None)
+    assert laboratorio.tabla_comprobantes.rows == []
+    laboratorio.busqueda.value = "Martínez"
+    laboratorio.buscar(None)
+    assert len(laboratorio.tabla_comprobantes.rows) == 1
 
 
 def test_precinto_roto_rechaza_y_no_deja_cargar_resultados(app):

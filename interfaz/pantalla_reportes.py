@@ -1,6 +1,7 @@
 import flet as ft
 
-from interfaz.pantalla import Pantalla, campo, fila_de_tabla, formulario, lista, opcion, subtitulo, tabla, texto_o_none
+from interfaz.pantalla import (COLOR_PRINCIPAL, Pantalla, campo_fecha, fila_de_tabla, formulario, lista, opcion, subtitulo,
+                               tabla, tarjeta, texto_o_none)
 from negocio.gestor import ErrorNegocio
 from negocio.gestor_reportes import NOMBRES_REPORTES, GestorReportes
 
@@ -12,18 +13,21 @@ class PantallaReportes(Pantalla):
         super().__init__()
         self.gestor = GestorReportes(ruta)
         self.tipo = lista("Reporte", [opcion(clave, nombre) for clave, nombre in NOMBRES_REPORTES.items()], ancho=460)
-        self.desde = campo("Desde (AAAA-MM-DD)", ancho=220)
-        self.hasta = campo("Hasta (AAAA-MM-DD)", ancho=220)
-        self.resultado = ft.Column(spacing=10)
+        self.desde = campo_fecha("Desde", con_hora=False, opcional=True)
+        self.hasta = campo_fecha("Hasta", con_hora=False, opcional=True, desde=self.desde)
+        self.resultado = ft.Column(spacing=10, controls=[ft.Text("Elegí un reporte y tocá Ver reporte.")])
 
     def controles(self):
         return [
-            formulario(self.tipo, self.desde, self.hasta),
-            ft.Row(controls=[
-                ft.Button("Ver reporte", on_click=self.ver),
-                ft.OutlinedButton("Exportar a PDF", on_click=self.exportar),
-            ]),
-            self.resultado,
+            tarjeta(
+                formulario(self.tipo, self.desde, self.hasta),
+                ft.Row(controls=[
+                    ft.FilledButton("Ver reporte", icon=ft.Icons.VISIBILITY, on_click=self.ver,
+                                    bgcolor=COLOR_PRINCIPAL),
+                    ft.OutlinedButton("Exportar a PDF", icon=ft.Icons.PICTURE_AS_PDF, on_click=self.exportar),
+                ]),
+            ),
+            tarjeta(self.resultado),
         ]
 
     def ver(self, e):

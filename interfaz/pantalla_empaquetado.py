@@ -1,6 +1,7 @@
 import flet as ft
 
-from interfaz.pantalla import Pantalla, ahora, campo, formulario, id_elegido, lista, opcion, subtitulo
+from interfaz.pantalla import (Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, formulario, id_elegido, lista, opcion,
+                               subtitulo, tarjeta, vaciar)
 from negocio.gestor_envios import GestorEnvios
 
 
@@ -11,16 +12,16 @@ class PantallaEmpaquetado(Pantalla):
         super().__init__()
         self.gestor = GestorEnvios(ruta)
         self.muestras = ft.Column(spacing=2)
-        self.conservadora = lista("Conservadora", ancho=340)
-        self.responsable = campo("Responsable")
-        self.fecha = campo("Fecha (AAAA-MM-DD HH:MM)")
+        self.conservadora = lista("Conservadora *", ancho=340)
+        self.responsable = campo("Responsable *")
+        self.fecha = campo_fecha("Fecha y hora *")
+        self.dialogo = Dialogo("Nuevo remito", [formulario(self.conservadora, self.responsable, self.fecha)],
+                               self.empaquetar, texto_boton="Empaquetar")
 
     def controles(self):
         return [
-            subtitulo("Muestras extraídas"),
-            self.muestras,
-            formulario(self.conservadora, self.responsable, self.fecha),
-            ft.Row(controls=[ft.Button("Empaquetar y generar remito", on_click=self.empaquetar)]),
+            ft.Row(controls=[boton_nuevo("Empaquetar las muestras marcadas", self.nuevo)]),
+            tarjeta(subtitulo("Muestras extraídas"), self.muestras),
         ]
 
     def refrescar(self):
@@ -39,6 +40,11 @@ class PantallaEmpaquetado(Pantalla):
         ]
         self.fecha.value = ahora()
 
+    def nuevo(self, e):
+        vaciar(self.conservadora, self.responsable)
+        self.fecha.value = ahora()
+        self._abrir_dialogo(self.dialogo)
+
     def empaquetar(self, e):
         self._intentar(self._empaquetar)
 
@@ -46,5 +52,6 @@ class PantallaEmpaquetado(Pantalla):
         elegidas = [c.data for c in self.muestras.controls if isinstance(c, ft.Checkbox) and c.value]
         resultado = self.gestor.empaquetar(elegidas, id_elegido(self.conservadora, "Conservadora"), self.fecha.value,
                                            self.responsable.value)
+        self._cerrar_dialogo()
         self.refrescar()
         self._informar(f"Remito {resultado['numero']} emitido con el precinto {resultado['precinto']}.")

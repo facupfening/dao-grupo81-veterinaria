@@ -24,7 +24,7 @@ interfaz/  → negocio/  → dao/  → SQLite
 - **Una regla de negocio:** en el gestor de `negocio/` que corresponda, con su test.
 - **Una consulta SQL:** en el DAO de `dao/`, y se expone por un método del gestor.
 - **Una transición de estado:** en `estados/`, redefiniendo el método en el estado que la admite. Por defecto, la clase base la rechaza.
-- **Una pantalla:** una subclase de `Pantalla` en `interfaz/`, registrada en `aplicacion.py`.
+- **Una pantalla:** una subclase de `Pantalla` en `interfaz/`, registrada en `aplicacion.py`. Si crea algo, su formulario va en un `Dialogo`, abierto con un botón de `boton_nuevo()`.
 - **Un reporte:** una consulta en `ReporteDAO`, un método en `GestorReportes` y su entrada en `NOMBRES_REPORTES`.
 
 ## Flujo de una operación

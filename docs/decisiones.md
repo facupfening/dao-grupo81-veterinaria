@@ -75,6 +75,28 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Las vacunas se evalúan al último día del período, o a la fecha actual si no se indica | Da una foto coherente con el período pedido |
 | Los gráficos solo aparecen en el PDF | Es lo que muestra la materia con ReportLab y Matplotlib, y mantiene simple la pantalla |
 
+## Interfaz
+
+| Decisión | Motivo |
+| --- | --- |
+| Las altas se cargan en una ventana emergente (`Dialogo`) que abre un botón "Nuevo …" | La pantalla queda despejada para el listado, y el formulario aparece solo cuando hace falta |
+| Editar abre la misma ventana que el alta, con los datos cargados | Un solo formulario por entidad |
+| Con una ventana abierta, el error se muestra dentro de ella | El usuario lo ve sin cerrar la ventana ni perder lo cargado |
+| Después de cada acción, `_intentar()` llama a `page.update()` | Flet solo redibuja la ventana donde se hizo clic; sin esto, la tabla de atrás no mostraba el registro nuevo |
+| Los campos obligatorios llevan `*` en la etiqueta, y cada ventana muestra la leyenda "* Obligatorio" | El usuario sabe qué puede dejar vacío. Coincide con lo que exige el negocio |
+| Los colores están en constantes al principio de `interfaz/pantalla.py` | Cambiar el color de toda la aplicación es tocar una línea |
+| Para un turno nuevo hay que elegir primero el veterinario, en la pantalla | Ese mismo filtro muestra su agenda |
+| Las fechas no se escriben: se eligen con un calendario (`DatePicker`) y la hora con un reloj (`TimePicker`), con `campo_fecha()` | Evita errores de formato. El campo guarda el mismo texto `AAAA-MM-DD HH:MM`, así el negocio no cambia |
+| La fecha y la hora tienen un botón cada una, en lugar de abrir el reloj al cerrar el calendario | Flet no abre el segundo selector mientras el primero se está cerrando |
+| Calendario y reloj en español (`es-AR`, 24 horas) | Es el idioma de la aplicación |
+| `campo_fecha(..., desde=otro_campo)` deshabilita en el calendario los días anteriores a ese campo. Se usa en Hasta (Reportes) y en Fin (Turnos) | Evita elegir un período al revés. El negocio lo sigue rechazando por si Desde se cambia después |
+| La hora de Fin no se limita en el reloj | El reloj de Flet no tiene hora mínima; si Fin queda antes de Inicio el mismo día, el negocio lo rechaza |
+| Los campos numéricos usan `input_filter` de Flet: DNI solo dígitos (máximo 8), teléfono dígitos, espacios, `+` y `-`, precio y peso decimales con coma o punto, temperaturas decimales con signo menos | Evita tipear letras. La validación al guardar se mantiene como segunda barrera |
+| Cada botón "Nuevo …" vacía su formulario con `vaciar()` antes de abrir la ventana | Evita que aparezcan datos de una carga anterior. En los desplegables también se borra `text`, porque Flet sigue mostrando la opción anterior aunque el valor sea `None` |
+| Las vacunas y muestras agregadas se muestran como lista (`item_de_lista()`), cada una con un botón para quitarla | Se ve qué se va a registrar y se puede corregir antes de guardar |
+| `Dialogo.abrir()` no hace nada si la ventana ya está abierta | Un doble clic hacía que Flet lanzara `RuntimeError: Dialog is already opened` |
+| Laboratorio muestra las muestras pendientes de resultado y todos los comprobantes, no solo el último | Se puede volver a consultar cualquier comprobante. La búsqueda es por número o por nombre del cliente, igual que la de clientes |
+
 ## Clases del dominio
 
 Solo `Cliente`, `Mascota`, `Muestra` y `Remito` son clases. Las demás entidades se manejan como filas de la base, igual que el ejemplo `PersonaDAO` de las filminas. Es lo más simple, pero sigue abierto si conviene crear más clases: ver [estado.md](estado.md).

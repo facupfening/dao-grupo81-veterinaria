@@ -509,6 +509,18 @@ def test_muestras_rechazadas_no_se_facturan(ruta):
     assert len(GestorLaboratorio(ruta).obtener_comprobante(resultado["comprobante_id"])["detalles"]) == 1
 
 
+def test_comprobantes_se_listan_y_se_buscan_por_numero_o_cliente(ruta):
+    consulta_id, _, _ = remito_recibido(ruta, "Roto")
+    gestor = GestorLaboratorio(ruta)
+    resultado = gestor.emitir_comprobante(consulta_id, "2026-11-04 10:00")
+    todos = gestor.listar_comprobantes()
+    assert [c["numero"] for c in todos] == [resultado["numero"]]
+    assert todos[0]["cliente"] == "Martínez, Ana"
+    assert len(gestor.listar_comprobantes(resultado["numero"])) == 1
+    assert len(gestor.listar_comprobantes("Martínez")) == 1
+    assert gestor.listar_comprobantes("Sosa") == []
+
+
 def test_analisis_posterior_se_factura_en_otro_comprobante_sin_repetir_lineas(ruta):
     consulta_id, muestras, _ = remito_recibido(ruta)
     gestor = GestorLaboratorio(ruta)
