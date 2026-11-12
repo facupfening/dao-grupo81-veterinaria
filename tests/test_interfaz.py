@@ -140,14 +140,34 @@ def test_el_alta_se_hace_en_una_ventana_que_muestra_sus_errores(app):
     assert pantalla.mensaje.color == VERDE
 
 
-def test_turno_nuevo_exige_elegir_el_veterinario(app):
+def test_turnos_muestra_una_tabla_por_veterinario_con_su_clinica(app):
+    pantalla = abrir(app, TURNOS)
+    assert pantalla.titulo == "Turnos y veterinarios"
+    assert len(pantalla.tablas) == len(pantalla.agenda.controls) == len(pantalla.veterinario.options)
+    textos = [c.value for tarjeta in pantalla.agenda.controls for c in tarjeta.content.controls
+              if isinstance(c, ft.Text)]
+    assert "Gómez, Laura" in textos
+    assert any("Clínica Centro" in t for t in textos)
+
+
+def test_turnos_muestra_las_clinicas_con_sus_veterinarios(app):
+    pantalla = abrir(app, TURNOS)
+    filas = {f.cells[0].content.value: f.cells[3].content.value for f in pantalla.tabla_clinicas.rows}
+    assert len(filas) == 5
+    assert filas["Clínica Centro"] == "2"
+    assert filas["Clínica Oeste"] == "1"
+
+
+def test_registrar_turno_pide_el_veterinario_en_la_ventana(app):
     pantalla = abrir(app, TURNOS)
     pantalla.nuevo(None)
-    assert not pantalla.dialogo.ventana.open
-    assert pantalla.mensaje.color == ROJO
-    elegir_por_texto(pantalla.veterinario, "Gómez")
-    pantalla.nuevo(None)
     assert pantalla.dialogo.ventana.open
+    elegir_por_texto(pantalla.mascota, "Toby")
+    pantalla.inicio.value = "2026-11-03 10:00"
+    pantalla.fin.value = "2026-11-03 10:30"
+    pantalla.reservar(None)
+    assert pantalla.dialogo.ventana.open
+    assert "Veterinario" in pantalla.dialogo.error.value
 
 
 def test_las_fechas_se_eligen_con_calendario_y_reloj(app):
@@ -382,12 +402,13 @@ def test_turnos_reserva_superposicion_y_cancelacion(app):
     pantalla = abrir(app, TURNOS)
     elegir_por_texto(pantalla.mascota, "Toby")
     elegir_por_texto(pantalla.veterinario, "Gómez")
-    pantalla.elegir_veterinario(None)
     pantalla.inicio.value = "2026-11-03 10:00"
     pantalla.fin.value = "2026-11-03 10:30"
     pantalla.reservar(None)
     assert pantalla.mensaje.color == VERDE
-    assert len(pantalla.tabla.rows) == 1
+    gomez = int(pantalla.veterinario.value)
+    assert len(pantalla.tablas[gomez].rows) == 1
+    assert all(t.rows == [] for id, t in pantalla.tablas.items() if id != gomez)
 
     pantalla.inicio.value = "2026-11-03 10:15"
     pantalla.fin.value = "2026-11-03 10:45"

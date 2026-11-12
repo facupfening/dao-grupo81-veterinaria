@@ -14,7 +14,12 @@ class CatalogoDAO(BaseDAO):
         return self._conexion.execute("SELECT * FROM clinicas ORDER BY nombre").fetchall()
 
     def listar_veterinarios(self):
-        return self._conexion.execute("SELECT * FROM veterinarios ORDER BY apellido, nombre").fetchall()
+        # Incluye el nombre de la clínica a la que está asociado cada veterinario.
+        return self._conexion.execute(
+            """SELECT v.*, c.nombre AS clinica FROM veterinarios v
+               JOIN clinicas c ON c.id = v.clinica_id
+               ORDER BY v.apellido, v.nombre"""
+        ).fetchall()
 
     def obtener_veterinario(self, id):
         return self._conexion.execute("SELECT * FROM veterinarios WHERE id = ?", (id,)).fetchone()

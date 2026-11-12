@@ -66,7 +66,15 @@ INSERT INTO conservadoras (codigo, capacidad, temp_min, temp_max, estado) VALUES
     ('REF-02', 6, 2, 8, 'Disponible'),
     ('AMB-01', 8, 15, 25, 'Disponible'),
     ('CON-01', 4, -20, -10, 'Disponible'),
-    ('REF-03', 10, 2, 8, 'Fuera de servicio');
+    ('REF-03', 10, 2, 8, 'Fuera de servicio'),
+    -- Más conservadoras disponibles de cada rango, para poder hacer varias pruebas de empaquetado.
+    ('REF-04', 10, 2, 8, 'Disponible'),
+    ('REF-05', 8, 2, 8, 'Disponible'),
+    ('REF-06', 6, 2, 8, 'Disponible'),
+    ('AMB-02', 8, 15, 25, 'Disponible'),
+    ('AMB-03', 6, 15, 25, 'Disponible'),
+    ('CON-02', 4, -20, -10, 'Disponible'),
+    ('CON-03', 4, -20, -10, 'Disponible');
 
 INSERT INTO transportistas (nombre, cuit, telefono) VALUES
     ('Transporte Ejemplo', '30-00000001-0', '351-200-0001'),

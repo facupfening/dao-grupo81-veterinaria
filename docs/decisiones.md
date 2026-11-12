@@ -93,7 +93,8 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Después de cada acción, `_intentar()` llama a `page.update()` | Flet solo redibuja la ventana donde se hizo clic; sin esto, la tabla de atrás no mostraba el registro nuevo |
 | Los campos obligatorios llevan `*` en la etiqueta, y cada ventana muestra la leyenda "* Obligatorio" | El usuario sabe qué puede dejar vacío. Coincide con lo que exige el negocio |
 | Los colores están en constantes al principio de `interfaz/pantalla.py` | Cambiar el color de toda la aplicación es tocar una línea |
-| Para un turno nuevo hay que elegir primero el veterinario, en la pantalla | Ese mismo filtro muestra su agenda |
+| La sección "Turnos y veterinarios" muestra una tarjeta por veterinario (nombre, matrícula y clínica) con todos sus turnos, y el veterinario se elige dentro de la ventana "Registrar turno" | Se pidió ver la agenda de todos sin filtrar primero. Reemplaza al desplegable de veterinario que estaba arriba de la tabla |
+| Debajo de los veterinarios, la misma sección lista las clínicas (nombre, dirección, teléfono y cantidad de veterinarios) | Se pidió verlas en la pestaña. La cantidad se cuenta con la lista de veterinarios que la pantalla ya trajo, sin otra consulta |
 | Las fechas no se escriben: se eligen con un calendario (`DatePicker`) y la hora con un reloj (`TimePicker`), con `campo_fecha()` | Evita errores de formato. El campo guarda el mismo texto `AAAA-MM-DD HH:MM`, así el negocio no cambia |
 | La fecha y la hora tienen un botón cada una, en lugar de abrir el reloj al cerrar el calendario | Flet no abre el segundo selector mientras el primero se está cerrando |
 | Calendario y reloj en español (`es-AR`, 24 horas) | Es el idioma de la aplicación |
@@ -107,6 +108,7 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Cada estado tiene un color fijo (`COLORES_ESTADO`) y se muestra con `etiqueta_estado()` en todas las pantallas | Se reconoce la etapa de un vistazo. Los estados de remito usan el color del estado de muestra equivalente |
 | La trazabilidad (Muestras, Envíos), la historia clínica y el detalle de comprobante se abren en un `PanelLateral` a la derecha, que se cierra con la X | Se ve el detalle sin perder el listado. Flet lo permite con una fila de dos columnas, así que no hizo falta una ventana emergente |
 | En Muestras, Envíos y comprobantes, tocar la fila también abre el detalle | En pantallas angostas la columna de acciones queda fuera de la vista |
+| Los datos de ejemplo traen 11 conservadoras: REF-01 a REF-06 (2 a 8 °C), AMB-01 a AMB-03 (15 a 25 °C) y CON-01 a CON-03 (-20 a -10 °C); REF-03 está fuera de servicio | Hay varias disponibles de cada rango para probar empaquetados seguidos. Las nuevas van al final, así las de siempre conservan su id |
 | La tabla de Consultas tiene una columna Clínica | Se pidió ver dónde se atendió cada consulta. Sale de `consultas.clinica_id`, sin cambiar el esquema |
 | En Consultas, las muestras se muestran en grilla de hasta 3 por renglón y la fila crece en alto | La fila no se estira a lo ancho cuando una consulta tiene muchas muestras |
 | El recorrido de una muestra indica el próximo paso y en qué pantalla se hace | Responde "¿dónde está y qué falta?" sin tener que conocer el flujo |

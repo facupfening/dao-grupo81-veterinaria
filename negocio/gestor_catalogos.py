@@ -10,6 +10,10 @@ class GestorCatalogos(Gestor):
         with self._transaccion() as conexion:
             return CatalogoDAO(conexion).listar_especies()
 
+    def listar_clinicas(self):
+        with self._transaccion() as conexion:
+            return CatalogoDAO(conexion).listar_clinicas()
+
     def listar_veterinarios(self):
         with self._transaccion() as conexion:
             return CatalogoDAO(conexion).listar_veterinarios()

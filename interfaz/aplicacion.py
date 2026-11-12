@@ -21,7 +21,7 @@ class Aplicacion:
         secciones = [
             ("Clientes", ft.Icons.PEOPLE, PantallaClientes(ruta)),
             ("Mascotas", ft.Icons.PETS, PantallaMascotas(ruta)),
-            ("Turnos", ft.Icons.EVENT, PantallaTurnos(ruta)),
+            ("Turnos y\nveterinarios", ft.Icons.EVENT, PantallaTurnos(ruta)),
             ("Consultas", ft.Icons.MEDICAL_SERVICES, PantallaConsultas(ruta)),
             ("Empaquetado", ft.Icons.INVENTORY_2, PantallaEmpaquetado(ruta)),
             ("Envíos", ft.Icons.LOCAL_SHIPPING, PantallaEnvios(ruta)),
