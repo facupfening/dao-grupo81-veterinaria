@@ -268,6 +268,40 @@ def test_las_muestras_agregadas_se_ven_en_lista_y_se_pueden_quitar(app):
     assert "Perfil" in pantalla.lista_muestras.controls[0].controls[1].value
 
 
+def test_la_seccion_muestras_muestra_estados_y_recorrido(app):
+    llevar_hasta_la_recepcion(app)
+    muestras = next(p for p in app.pantallas if p.titulo == "Trazabilidad de muestras")
+    muestras.refrescar()
+    assert len(muestras.tabla.rows) == 2
+    assert [c.content.controls[0].value for c in muestras.resumen.controls] == ["0", "0", "0", "2", "0", "0"]
+    muestras.filtrar_por("Analizada")
+    assert muestras.tabla.rows == []
+    muestras.filtrar_por("Recibida")
+    assert len(muestras.tabla.rows) == 2
+    id_muestra = muestras.gestor.listar()[0]["id"]
+    muestras.ver_trazabilidad(id_muestra)
+    assert "Cargar el resultado" in muestras.detalle.controls[1].value
+    assert len(muestras.detalle.controls) == 3 + 4  # encabezado + 4 cambios de estado
+
+    consultas = abrir(app, CONSULTAS)
+    grilla = consultas.tabla.rows[0].cells[5].content.content
+    assert [len(renglon.controls) for renglon in grilla.controls] == [2]
+
+
+def test_las_muestras_de_una_consulta_se_ven_de_a_3_por_renglon(app):
+    pantalla = app.pantallas[CONSULTAS]
+    muestras = [(f"M-{i}", "Extraída") for i in range(7)]
+    grilla = pantalla._etiquetas_de_muestras(muestras).content
+    assert [len(renglon.controls) for renglon in grilla.controls] == [3, 3, 1]
+
+
+def test_la_trazabilidad_se_abre_en_un_panel_a_la_derecha(app):
+    envios = llevar_hasta_la_recepcion(app)
+    assert envios.panel.tarjeta.visible
+    envios.panel.cerrar()
+    assert not envios.panel.tarjeta.visible
+
+
 def test_clientes_muestra_los_errores_del_negocio(app):
     pantalla = abrir(app, CLIENTES)
     pantalla.dni.value = "30000001"
@@ -465,6 +499,7 @@ def test_recorrido_completo_con_precinto_intacto(app, ruta):
     laboratorio.emitir_comprobante(None)
     assert laboratorio.total.value == "Total: $ 63000.00"
     assert len(laboratorio.tabla.rows) == 3
+    assert laboratorio.panel.tarjeta.visible
     assert len(laboratorio.tabla_comprobantes.rows) == 1
     assert laboratorio.tabla_muestras.rows == []
 

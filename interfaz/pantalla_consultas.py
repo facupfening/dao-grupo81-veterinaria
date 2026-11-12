@@ -1,12 +1,15 @@
 import flet as ft
 
 from interfaz.pantalla import (NUMERO_DECIMAL, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla,
-                               formulario, id_elegido, item_de_lista, lista, numero, opcion, subtitulo, tabla, tarjeta,
+                               formulario, id_elegido, item_de_lista, etiqueta_estado, lista, numero, opcion, subtitulo, tabla, tarjeta,
                                texto_o_none, vaciar)
 from negocio.gestor import ErrorNegocio
 from negocio.gestor_atencion import PRIORIDADES, TIPOS_CONSULTA, GestorAtencion
 from negocio.gestor_catalogos import GestorCatalogos
 from negocio.gestor_mascotas import GestorMascotas
+from negocio.gestor_muestras import GestorMuestras
+
+MUESTRAS_POR_RENGLON = 3
 
 
 class PantallaConsultas(Pantalla):
@@ -17,6 +20,7 @@ class PantallaConsultas(Pantalla):
         self.gestor = GestorAtencion(ruta)
         self.mascotas = GestorMascotas(ruta)
         self.catalogos = GestorCatalogos(ruta)
+        self.muestras = GestorMuestras(ruta)
         self.vacunas_aplicadas = []
         self.muestras_de_orden = []
 
@@ -43,7 +47,9 @@ class PantallaConsultas(Pantalla):
         self.fecha_extraccion = campo_fecha("Extracción *")
         self.lista_muestras = ft.Column(spacing=0)
 
-        self.tabla = tabla("Fecha", "Mascota", "Tipo", "Diagnóstico", "Precio", "Acciones")
+        self.tabla = tabla("Fecha", "Mascota", "Tipo", "Diagnóstico", "Precio", "Muestras", "Acciones")
+        # Sin límite de alto: cada fila crece según los renglones de muestras que tenga.
+        self.tabla.data_row_max_height = float("inf")
         self.dialogo_consulta = Dialogo(
             "Nueva consulta",
             [
@@ -206,16 +212,27 @@ class PantallaConsultas(Pantalla):
 
     def _cargar_consultas(self):
         consultas = self.gestor.listar_consultas()
+        muestras = self.muestras.estados_por_consulta()
         self.consulta.options = [opcion(c["id"], f"{c['fecha_hora']} - {c['mascota']} ({c['tipo']})")
                                  for c in consultas]
         self.tabla.rows = [
             fila_de_tabla(
-                [c["fecha_hora"], c["mascota"], c["tipo"], c["diagnostico"], f"$ {c['precio']:.2f}"],
+                [c["fecha_hora"], c["mascota"], c["tipo"], c["diagnostico"], f"$ {c['precio']:.2f}",
+                 self._etiquetas_de_muestras(muestras.get(c["id"], []))],
                 [ft.IconButton(ft.Icons.SCIENCE, tooltip="Emitir orden de derivación", icon_color=ft.Colors.TEAL_700,
                                on_click=lambda e, id=c["id"]: self.nueva_orden(e, id))],
             )
             for c in consultas
         ]
+
+    def _etiquetas_de_muestras(self, muestras):
+        """Las muestras de la consulta como grilla: una etiqueta de color por muestra, hasta 3 por renglón."""
+        if not muestras:
+            return ft.Text("-")
+        etiquetas = [etiqueta_estado(estado, f"{codigo} · {estado}") for codigo, estado in muestras]
+        renglones = [etiquetas[i:i + MUESTRAS_POR_RENGLON] for i in range(0, len(etiquetas), MUESTRAS_POR_RENGLON)]
+        grilla = ft.Column(controls=[ft.Row(controls=renglon, spacing=4) for renglon in renglones], spacing=4)
+        return ft.Container(content=grilla, padding=ft.Padding.symmetric(vertical=6))
 
     def _cargar_opciones_de_mascota(self):
         if not self.mascota.value:

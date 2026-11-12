@@ -451,6 +451,7 @@ classDiagram
     class PantallaEmpaquetado
     class PantallaEnvios
     class PantallaLaboratorio
+    class PantallaMuestras
     class PantallaReportes
 
     class Gestor {
@@ -467,6 +468,7 @@ classDiagram
     class GestorCatalogos
     class GestorEnvios
     class GestorLaboratorio
+    class GestorMuestras
     class GestorReportes
 
     class BaseDAO {
@@ -496,7 +498,7 @@ classDiagram
     class TablaReporte
     class GraficoReporte
 
-    Aplicacion "1" *-- "8" Pantalla : muestra
+    Aplicacion "1" *-- "9" Pantalla : muestra
     Pantalla &lt;|-- PantallaClientes
     Pantalla &lt;|-- PantallaMascotas
     Pantalla &lt;|-- PantallaTurnos
@@ -504,6 +506,7 @@ classDiagram
     Pantalla &lt;|-- PantallaEmpaquetado
     Pantalla &lt;|-- PantallaEnvios
     Pantalla &lt;|-- PantallaLaboratorio
+    Pantalla &lt;|-- PantallaMuestras
     Pantalla &lt;|-- PantallaReportes
 
     Gestor ..&gt; ErrorNegocio : lanza
@@ -513,6 +516,7 @@ classDiagram
     Gestor &lt;|-- GestorCatalogos
     Gestor &lt;|-- GestorEnvios
     Gestor &lt;|-- GestorLaboratorio
+    Gestor &lt;|-- GestorMuestras
     Gestor &lt;|-- GestorReportes
 
     BaseDAO &lt;|-- ClienteDAO
@@ -537,6 +541,8 @@ classDiagram
     Reporte "1" *-- "0..*" TablaReporte
     Reporte "1" *-- "0..*" GraficoReporte
     GestorReportes ..&gt; ReporteDAO : usa
+    PantallaMuestras ..&gt; GestorMuestras : usa
+    GestorMuestras ..&gt; MuestraDAO : usa
     GestorReportes ..&gt; Reporte : arma
   </pre>
 </section>

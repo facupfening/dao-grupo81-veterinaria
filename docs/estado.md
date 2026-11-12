@@ -11,11 +11,12 @@
 | Patrón State | Muestra y remito, con historial y paso de estado en conjunto |
 | DAO | Una clase por entidad principal |
 | Procesos 1 a 7 | Implementados en `negocio/` |
-| Interfaz de Flet | 8 secciones: Clientes, Mascotas, Turnos, Consultas, Empaquetado, Envíos, Laboratorio y Reportes. Colores en verde azulado, listados en tarjetas y altas en ventanas emergentes que se abren con botones "Nuevo …". Las fechas se eligen con calendario y las horas con reloj. DNI, teléfono, precio, peso y temperaturas no dejan tipear letras. Los campos obligatorios llevan `*`. El calendario de Hasta (Reportes) y de Fin (Turnos) no ofrece días anteriores a Desde e Inicio. Laboratorio lista las muestras pendientes y todos los comprobantes, con búsqueda por número o cliente y su detalle. Cada ventana se abre vacía; las vacunas y muestras agregadas se ven en lista y se pueden quitar |
+| Interfaz de Flet | 9 secciones: Clientes, Mascotas, Turnos, Consultas, Empaquetado, Envíos, Laboratorio, Muestras y Reportes. Colores en verde azulado, listados en tarjetas y altas en ventanas emergentes que se abren con botones "Nuevo …". Las fechas se eligen con calendario y las horas con reloj. DNI, teléfono, precio, peso y temperaturas no dejan tipear letras. Los campos obligatorios llevan `*`. El calendario de Hasta (Reportes) y de Fin (Turnos) no ofrece días anteriores a Desde e Inicio. Laboratorio lista las muestras pendientes y todos los comprobantes, con búsqueda por número o cliente y su detalle. Cada ventana se abre vacía; las vacunas y muestras agregadas se ven en lista y se pueden quitar |
+| Trazabilidad de muestras | Sección Muestras: cantidad por estado, filtro, búsqueda y recorrido completo de cada muestra con su próximo paso. El estado se ve en color también en Consultas (grilla de hasta 3 por renglón), Envíos y la historia clínica. La trazabilidad, la historia clínica y el detalle de comprobante se abren en un panel a la derecha del listado, tocando el ícono o la fila |
 | Reportes | Los 5 prometidos, en pantalla y en PDF con gráficos |
 | Datos de demostración | `cargar_demo.py`, a pedido |
 | Diagramas | DER y diagramas de clases en `docs/diagramas/diagramas.html`, armados a partir del código |
-| Tests | 255 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.11 y 3.14) |
+| Tests | 260 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.11 y 3.14) |
 
 ## Cómo se verificó
 

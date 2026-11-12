@@ -8,6 +8,7 @@ from interfaz.pantalla_empaquetado import PantallaEmpaquetado
 from interfaz.pantalla_envios import PantallaEnvios
 from interfaz.pantalla_laboratorio import PantallaLaboratorio
 from interfaz.pantalla_mascotas import PantallaMascotas
+from interfaz.pantalla_muestras import PantallaMuestras
 from interfaz.pantalla_reportes import PantallaReportes
 from interfaz.pantalla_turnos import PantallaTurnos
 
@@ -24,6 +25,7 @@ class Aplicacion:
             ("Empaquetado", ft.Icons.INVENTORY_2, PantallaEmpaquetado(ruta)),
             ("Envíos", ft.Icons.LOCAL_SHIPPING, PantallaEnvios(ruta)),
             ("Laboratorio", ft.Icons.SCIENCE, PantallaLaboratorio(ruta)),
+            ("Muestras", ft.Icons.BIOTECH, PantallaMuestras(ruta)),
             ("Reportes", ft.Icons.BAR_CHART, PantallaReportes(ruta)),
         ]
         self.pantallas = [pantalla for _, _, pantalla in secciones]

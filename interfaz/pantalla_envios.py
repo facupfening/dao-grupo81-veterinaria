@@ -1,14 +1,13 @@
 import flet as ft
 
 from estados.estado_remito import PRECINTO_INTACTO, PRECINTO_ROTO
-from interfaz.pantalla import (NUMERO_CON_SIGNO, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario, id_elegido,
+from interfaz.pantalla import (PanelLateral, etiqueta_estado, NUMERO_CON_SIGNO, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario, id_elegido,
                                lista, numero, opcion, subtitulo, tabla, tarjeta, texto_o_none, vaciar)
 from negocio.gestor import ErrorNegocio
 from negocio.gestor_catalogos import GestorCatalogos
 from negocio.gestor_envios import ARRIBO, DESPACHO, TRASPASO, GestorEnvios
 
 ESTADOS_FINALES = ("Recibido", "Rechazado")
-SIN_TRAZABILIDAD = "Tocá el ícono de un remito para ver su trazabilidad acá."
 
 
 class PantallaEnvios(Pantalla):
@@ -35,7 +34,8 @@ class PantallaEnvios(Pantalla):
         self.observaciones = campo("Observaciones", ancho=380)
 
         self.tabla = tabla("Número", "Emisión", "Estado", "Muestras", "Acciones")
-        self.detalle = ft.Column(spacing=4, controls=[ft.Text(SIN_TRAZABILIDAD)])
+        self.detalle = ft.Column(spacing=4)
+        self.panel = PanelLateral(self.detalle)
         self.dialogo_evento = Dialogo(
             "Nuevo evento de envío",
             [formulario(self.remito_evento, self.transportista, self.tipo, self.fecha_evento, self.ubicacion,
@@ -57,11 +57,10 @@ class PantallaEnvios(Pantalla):
                 boton_nuevo("Nuevo evento de envío", self.nuevo_evento),
                 boton_nuevo("Nueva recepción", self.nueva_recepcion),
             ]),
-            tarjeta(
+            self.panel.junto_a(tarjeta(
                 subtitulo("Remitos"),
                 ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
-            ),
-            tarjeta(self.detalle),
+            )),
         ]
 
     def refrescar(self):
@@ -76,9 +75,10 @@ class PantallaEnvios(Pantalla):
         self.fecha_recepcion.value = ahora()
         self.tabla.rows = [
             fila_de_tabla(
-                [r.numero, r.fecha_emision, r.estado, len(r.muestras)],
+                [r.numero, r.fecha_emision, etiqueta_estado(r.estado), len(r.muestras)],
                 [ft.IconButton(ft.Icons.DESCRIPTION, tooltip="Ver trazabilidad", icon_color=ft.Colors.TEAL_700,
                                on_click=lambda e, id=r.id: self.ver_trazabilidad(id))],
+                al_tocar=lambda e, id=r.id: self.ver_trazabilidad(id),
             )
             for r in remitos
         ]
@@ -148,7 +148,8 @@ class PantallaEnvios(Pantalla):
                 f"{recepcion['temp_llegada']} °C, recibió {recepcion['recibido_por']}"
             ))
         for muestra in remito.muestras:
-            lineas.append(ft.Text(f"Muestra {muestra.codigo}: {muestra.estado}"))
+            lineas.append(ft.Row(controls=[ft.Text(f"Muestra {muestra.codigo}:"), etiqueta_estado(muestra.estado)]))
         self.detalle.controls = lineas
+        self.panel.mostrar()
         if not conservar_mensaje:
             self.mensaje.value = ""

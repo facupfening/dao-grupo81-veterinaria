@@ -1,11 +1,10 @@
 import flet as ft
 
-from interfaz.pantalla import (Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario,
+from interfaz.pantalla import (Dialogo, PanelLateral, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario,
                                id_elegido, lista, opcion, subtitulo, tabla, tarjeta, texto_o_none, vaciar)
 from negocio.gestor_atencion import GestorAtencion
 from negocio.gestor_laboratorio import GestorLaboratorio
 
-SIN_DETALLE = "Tocá el ícono de un comprobante para ver su detalle acá."
 
 
 class PantallaLaboratorio(Pantalla):
@@ -28,7 +27,11 @@ class PantallaLaboratorio(Pantalla):
         self.tabla_comprobantes = tabla("Número", "Fecha", "Cliente", "Clínica", "Total", "Acciones")
         self.titulo_detalle = subtitulo("Detalle del comprobante")
         self.tabla = tabla("Descripción", "Cantidad", "Precio unitario")
-        self.total = ft.Text(SIN_DETALLE, weight=ft.FontWeight.BOLD)
+        self.total = ft.Text(weight=ft.FontWeight.BOLD)
+        self.panel = PanelLateral(ft.Column(
+            controls=[self.titulo_detalle, ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO), self.total],
+            spacing=10,
+        ))
 
         self.dialogo_resultado = Dialogo(
             "Nuevo resultado",
@@ -53,17 +56,12 @@ class PantallaLaboratorio(Pantalla):
                 subtitulo("Muestras recibidas pendientes de resultado"),
                 ft.Row(controls=[self.tabla_muestras], scroll=ft.ScrollMode.AUTO),
             ),
-            tarjeta(
+            self.panel.junto_a(tarjeta(
                 subtitulo("Comprobantes emitidos"),
                 ft.Row(controls=[self.busqueda,
                                  ft.OutlinedButton("Buscar", icon=ft.Icons.SEARCH, on_click=self.buscar)]),
                 ft.Row(controls=[self.tabla_comprobantes], scroll=ft.ScrollMode.AUTO),
-            ),
-            tarjeta(
-                self.titulo_detalle,
-                ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
-                self.total,
-            ),
+            )),
         ]
 
     def refrescar(self):
@@ -129,6 +127,7 @@ class PantallaLaboratorio(Pantalla):
             for d in datos["detalles"]
         ]
         self.total.value = f"Total: $ {datos['comprobante']['total']:.2f}"
+        self.panel.mostrar()
 
     def _mostrar_comprobantes(self):
         self.tabla_comprobantes.rows = [
@@ -136,6 +135,7 @@ class PantallaLaboratorio(Pantalla):
                 [c["numero"], c["fecha"], c["cliente"], c["clinica"], f"$ {c['total']:.2f}"],
                 [ft.IconButton(ft.Icons.RECEIPT_LONG, tooltip="Ver detalle", icon_color=ft.Colors.TEAL_700,
                                on_click=lambda e, id=c["id"]: self.ver_comprobante(id))],
+                al_tocar=lambda e, id=c["id"]: self.ver_comprobante(id),
             )
             for c in self.gestor.listar_comprobantes(self.busqueda.value)
         ]

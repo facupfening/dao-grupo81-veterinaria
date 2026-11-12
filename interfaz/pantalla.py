@@ -14,6 +14,20 @@ COLOR_TARJETA = ft.Colors.WHITE
 COLOR_EXITO = ft.Colors.GREEN_800
 COLOR_ERROR = ft.Colors.RED_700
 
+# Un color por estado de muestra y de remito, para reconocerlos de un vistazo en todas las pantallas.
+COLORES_ESTADO = {
+    "Extraída": ft.Colors.BLUE_GREY_400,
+    "Emitido": ft.Colors.BLUE_GREY_400,
+    "Empaquetada": ft.Colors.INDIGO_400,
+    "Despachado": ft.Colors.INDIGO_400,
+    "En tránsito": ft.Colors.ORANGE_700,
+    "Recibida": ft.Colors.PURPLE_400,
+    "Recibido": ft.Colors.PURPLE_400,
+    "Analizada": ft.Colors.GREEN_700,
+    "Rechazada": ft.Colors.RED_700,
+    "Rechazado": ft.Colors.RED_700,
+}
+
 # Filtros de tipeo: el campo no deja escribir lo que no corresponde.
 # Igual se valida al guardar, como segunda barrera.
 SOLO_DIGITOS = ft.NumbersOnlyInputFilter()
@@ -112,12 +126,27 @@ def tabla(*columnas):
     )
 
 
-def fila_de_tabla(valores, acciones=()):
-    """Arma una fila con textos y, opcionalmente, una última celda con botones."""
-    celdas = [ft.DataCell(content=ft.Text("" if v is None else str(v))) for v in valores]
+def fila_de_tabla(valores, acciones=(), al_tocar=None):
+    """Arma una fila con textos y, opcionalmente, una última celda con botones.
+
+    Un valor que ya es un control (por ejemplo, una etiqueta de estado) se muestra tal cual.
+    Si se indica `al_tocar`, tocar cualquier parte de la fila ejecuta esa acción.
+    """
+    celdas = [ft.DataCell(content=v if isinstance(v, ft.Control) else ft.Text("" if v is None else str(v)))
+              for v in valores]
     if acciones:
         celdas.append(ft.DataCell(content=ft.Row(controls=list(acciones), spacing=0)))
-    return ft.DataRow(cells=celdas)
+    return ft.DataRow(cells=celdas, on_select_change=al_tocar)
+
+
+def etiqueta_estado(estado, texto=None):
+    """El nombre del estado sobre su color: así se ve en qué etapa está una muestra o un remito."""
+    return ft.Container(
+        content=ft.Text(texto or estado, color=ft.Colors.WHITE, size=12, weight=ft.FontWeight.BOLD),
+        bgcolor=COLORES_ESTADO.get(estado, ft.Colors.GREY_600),
+        border_radius=12,
+        padding=ft.Padding.symmetric(horizontal=10, vertical=3),
+    )
 
 
 def formulario(*controles):
@@ -186,6 +215,45 @@ def numero(control, nombre, obligatorio=True):
         return float(texto)
     except ValueError:
         raise ErrorNegocio(f"{nombre}: debe ser un número") from None
+
+
+class PanelLateral:
+    """Tarjeta de detalle que aparece a la derecha del listado y se cierra con la X.
+
+    Se usa para la trazabilidad: el listado sigue visible mientras se mira el detalle.
+    """
+
+    def __init__(self, contenido):
+        self.tarjeta = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Row(controls=[ft.IconButton(ft.Icons.CLOSE, tooltip="Cerrar", on_click=self.cerrar)],
+                           alignment=ft.MainAxisAlignment.END),
+                    contenido,
+                ],
+                spacing=0,
+            ),
+            bgcolor=COLOR_TARJETA,
+            border_radius=12,
+            padding=16,
+            shadow=ft.BoxShadow(blur_radius=6, color=ft.Colors.BLACK_12),
+            expand=2,
+            visible=False,
+        )
+
+    def mostrar(self):
+        self.tarjeta.visible = True
+
+    def cerrar(self, e=None):
+        self.tarjeta.visible = False
+
+    def junto_a(self, *principal):
+        """Pone el contenido principal a la izquierda y el panel a la derecha."""
+        return ft.Row(
+            controls=[ft.Column(controls=list(principal), spacing=14, expand=3), self.tarjeta],
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            spacing=14,
+        )
 
 
 class Dialogo:

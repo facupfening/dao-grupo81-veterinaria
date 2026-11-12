@@ -95,6 +95,12 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Cada botón "Nuevo …" vacía su formulario con `vaciar()` antes de abrir la ventana | Evita que aparezcan datos de una carga anterior. En los desplegables también se borra `text`, porque Flet sigue mostrando la opción anterior aunque el valor sea `None` |
 | Las vacunas y muestras agregadas se muestran como lista (`item_de_lista()`), cada una con un botón para quitarla | Se ve qué se va a registrar y se puede corregir antes de guardar |
 | `Dialogo.abrir()` no hace nada si la ventana ya está abierta | Un doble clic hacía que Flet lanzara `RuntimeError: Dialog is already opened` |
+| Sección propia "Muestras" con `GestorMuestras`, que solo consulta | La trazabilidad atraviesa varios procesos (atención, envíos, laboratorio); un gestor aparte evita repartirla. No cambia estados: eso sigue en los gestores de cada proceso |
+| Cada estado tiene un color fijo (`COLORES_ESTADO`) y se muestra con `etiqueta_estado()` en todas las pantallas | Se reconoce la etapa de un vistazo. Los estados de remito usan el color del estado de muestra equivalente |
+| La trazabilidad (Muestras, Envíos), la historia clínica y el detalle de comprobante se abren en un `PanelLateral` a la derecha, que se cierra con la X | Se ve el detalle sin perder el listado. Flet lo permite con una fila de dos columnas, así que no hizo falta una ventana emergente |
+| En Muestras, Envíos y comprobantes, tocar la fila también abre el detalle | En pantallas angostas la columna de acciones queda fuera de la vista |
+| En Consultas, las muestras se muestran en grilla de hasta 3 por renglón y la fila crece en alto | La fila no se estira a lo ancho cuando una consulta tiene muchas muestras |
+| El recorrido de una muestra indica el próximo paso y en qué pantalla se hace | Responde "¿dónde está y qué falta?" sin tener que conocer el flujo |
 | Laboratorio muestra las muestras pendientes de resultado y todos los comprobantes, no solo el último | Se puede volver a consultar cualquier comprobante. La búsqueda es por número o por nombre del cliente, igual que la de clientes |
 
 ## Clases del dominio
