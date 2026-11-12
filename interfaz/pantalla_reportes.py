@@ -3,7 +3,7 @@ import flet as ft
 from interfaz.pantalla import (COLOR_PRINCIPAL, Pantalla, campo_fecha, fila_de_tabla, formulario, lista, opcion, subtitulo,
                                tabla, tarjeta, texto_o_none)
 from negocio.gestor import ErrorNegocio
-from negocio.gestor_reportes import NOMBRES_REPORTES, GestorReportes
+from negocio.gestor_reportes import FORMATOS, NOMBRES_REPORTES, GestorReportes
 
 
 class PantallaReportes(Pantalla):
@@ -15,6 +15,8 @@ class PantallaReportes(Pantalla):
         self.tipo = lista("Reporte", [opcion(clave, nombre) for clave, nombre in NOMBRES_REPORTES.items()], ancho=460)
         self.desde = campo_fecha("Desde", con_hora=False, opcional=True)
         self.hasta = campo_fecha("Hasta", con_hora=False, opcional=True, desde=self.desde)
+        self.formato = lista("Formato", [opcion(formato, formato) for formato in FORMATOS], ancho=160)
+        self.formato.value = FORMATOS[0]
         self.resultado = ft.Column(spacing=10, controls=[ft.Text("Elegí un reporte y tocá Ver reporte.")])
 
     def controles(self):
@@ -24,8 +26,9 @@ class PantallaReportes(Pantalla):
                 ft.Row(controls=[
                     ft.FilledButton("Ver reporte", icon=ft.Icons.VISIBILITY, on_click=self.ver,
                                     bgcolor=COLOR_PRINCIPAL),
-                    ft.OutlinedButton("Exportar a PDF", icon=ft.Icons.PICTURE_AS_PDF, on_click=self.exportar),
-                ]),
+                    self.formato,
+                    ft.OutlinedButton("Exportar", icon=ft.Icons.DOWNLOAD, on_click=self.exportar),
+                ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
             ),
             tarjeta(self.resultado),
         ]
@@ -45,14 +48,14 @@ class PantallaReportes(Pantalla):
             else:
                 controles.append(ft.Text("Sin datos para el período elegido."))
         self.resultado.controls = controles
-        self._informar(f"Período: {reporte.periodo}. Los gráficos se incluyen en el PDF.")
+        self._informar(f"Período: {reporte.periodo}. Los gráficos se incluyen en el archivo exportado.")
 
     def exportar(self, e):
         self._intentar(self._exportar)
 
     def _exportar(self):
-        ruta = self.gestor.exportar_pdf(self.tipo.value, self._generar())
-        self._informar(f"PDF guardado en {ruta}")
+        ruta = self.gestor.exportar(self.tipo.value, self._generar(), self.formato.value)
+        self._informar(f"{self.formato.value} guardado en {ruta}")
 
     def _generar(self):
         if not self.tipo.value:

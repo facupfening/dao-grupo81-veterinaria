@@ -62,7 +62,7 @@ La primera vez tarda un poco más porque Flet se prepara, y se crea `veterinaria
 
 ## Comandos opcionales
 
-Cargar atenciones ficticias, para probar los reportes. Conviene ejecutarlo antes de cargar datos propios, porque no hace nada si la base ya tiene consultas:
+Cargar 25 atenciones ficticias que recorren todas las opciones del sistema (estados, reportes, vacunas, rechazos). Conviene ejecutarlo antes de cargar datos propios, porque no hace nada si la base ya tiene consultas. Para empezar de cero, borrá `veterinaria.db` y volvé a ejecutarlo:
 
 ```bash
 python cargar_demo.py
@@ -74,7 +74,7 @@ Ejecutar los tests:
 pytest
 ```
 
-Para empezar de cero, borrá `veterinaria.db`. Los PDF de los reportes se guardan en `reportes_generados/`.
+Para empezar de cero, borrá `veterinaria.db`. Los reportes exportados (PDF, Excel o Markdown) se guardan en `reportes_generados/`.
 
 ## Estructura
 
@@ -86,6 +86,6 @@ Para empezar de cero, borrá `veterinaria.db`. Los PDF de los reportes se guarda
 | `dao/` | Una clase DAO por tabla principal, con el SQL |
 | `negocio/` | Validaciones y reglas de cada proceso |
 | `interfaz/` | Pantallas de Flet, sin SQL ni reglas de negocio |
-| `reportes/` | Reportes con ReportLab y Matplotlib |
+| `reportes/` | Exportación de reportes (patrón Factory Method) a PDF, Excel y Markdown, con gráficos de Matplotlib |
 | `tests/` | Pruebas con pytest |
 | `docs/` | Documentación del proyecto |

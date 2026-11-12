@@ -18,12 +18,14 @@ INSERT INTO vacunas (especie_id, nombre, obligatoria, intervalo_dias) VALUES
 
 INSERT INTO clinicas (id, nombre, direccion, telefono) VALUES
     (1, 'Clínica Centro', 'Av. Ejemplo 100, Córdoba', '351-000-0001'),
-    (2, 'Clínica Norte', 'Calle Ficticia 200, Córdoba', '351-000-0002');
+    (2, 'Clínica Norte', 'Calle Ficticia 200, Córdoba', '351-000-0002'),
+    (3, 'Clínica Sur', 'Av. Inventada 300, Córdoba', '351-000-0003');
 
 INSERT INTO veterinarios (clinica_id, matricula, nombre, apellido) VALUES
     (1, 'MP-1001', 'Laura', 'Gómez'),
     (1, 'MP-1002', 'Diego', 'Ferreyra'),
-    (2, 'MP-1003', 'Paula', 'Ríos');
+    (2, 'MP-1003', 'Paula', 'Ríos'),
+    (3, 'MP-1004', 'Martín', 'Acosta');
 
 INSERT INTO clientes (id, dni, nombre, apellido, telefono, email, direccion) VALUES
     (1, '30000001', 'Ana', 'Martínez', '351-100-0001', 'ana@example.com', 'Calle Uno 111'),
@@ -43,7 +45,8 @@ INSERT INTO historias_clinicas (mascota_id, fecha_apertura, antecedentes) VALUES
     (4, '2026-03-12 16:00', NULL);
 
 INSERT INTO laboratorios (nombre, direccion) VALUES
-    ('Laboratorio Central', 'Av. Laboratorio 500, Córdoba');
+    ('Laboratorio Central', 'Av. Laboratorio 500, Córdoba'),
+    ('Laboratorio del Sur', 'Calle Análisis 600, Córdoba');
 
 INSERT INTO tipos_analisis (nombre, tipo_muestra, temp_min, temp_max, precio) VALUES
     ('Hemograma completo', 'Sangre', 2, 8, 18000),
@@ -62,6 +65,7 @@ INSERT INTO conservadoras (codigo, capacidad, temp_min, temp_max, estado) VALUES
 
 INSERT INTO transportistas (nombre, cuit, telefono) VALUES
     ('Transporte Ejemplo', '30-00000001-0', '351-200-0001'),
-    ('Logística Ficticia', '30-00000002-0', '351-200-0002');
+    ('Logística Ficticia', '30-00000002-0', '351-200-0002'),
+    ('Envíos del Centro', '30-00000003-0', '351-200-0003');
 
 COMMIT;
