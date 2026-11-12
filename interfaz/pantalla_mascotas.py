@@ -1,13 +1,11 @@
 import flet as ft
 
-from interfaz.pantalla import (NUMERO_DECIMAL, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario, id_elegido,
+from interfaz.pantalla import (PanelLateral, etiqueta_estado, NUMERO_DECIMAL, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario, id_elegido,
                                lista, numero, opcion, subtitulo, tabla, tarjeta, texto_o_none, vaciar)
 from negocio.gestor_atencion import GestorAtencion
 from negocio.gestor_catalogos import GestorCatalogos
 from negocio.gestor_clientes import GestorClientes
 from negocio.gestor_mascotas import GestorMascotas
-
-SIN_HISTORIA = "Tocá el ícono de historia clínica de una mascota para verla acá."
 
 
 class PantallaMascotas(Pantalla):
@@ -29,7 +27,8 @@ class PantallaMascotas(Pantalla):
         self.peso = campo("Peso (kg)", ancho=120, input_filter=NUMERO_DECIMAL)
         self.antecedentes = campo("Antecedentes", ancho=480)
         self.tabla = tabla("Nombre", "Especie", "Raza", "Responsable", "Acciones")
-        self.detalle = ft.Column(spacing=4, controls=[ft.Text(SIN_HISTORIA)])
+        self.detalle = ft.Column(spacing=4)
+        self.panel = PanelLateral(self.detalle)
         self.dialogo = Dialogo(
             "Nueva mascota",
             [formulario(self.cliente, self.especie, self.nombre, self.raza, self.sexo, self.fecha_nacimiento,
@@ -40,11 +39,10 @@ class PantallaMascotas(Pantalla):
     def controles(self):
         return [
             ft.Row(controls=[boton_nuevo("Nueva mascota", self.nuevo)]),
-            tarjeta(
+            self.panel.junto_a(tarjeta(
                 subtitulo("Listado"),
                 ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
-            ),
-            tarjeta(self.detalle),
+            )),
         ]
 
     def refrescar(self):
@@ -112,7 +110,8 @@ class PantallaMascotas(Pantalla):
 
     def _borrar(self, id):
         self.gestor.baja(id)
-        self.detalle.controls = [ft.Text(SIN_HISTORIA)]
+        self.detalle.controls = []
+        self.panel.cerrar()
         self._informar("Mascota dada de baja.")
         self.refrescar()
 
@@ -141,9 +140,14 @@ class PantallaMascotas(Pantalla):
             for item in orden["muestras"]:
                 muestra = item["muestra"]
                 resultado = item["resultado"]
-                conclusion = f"; resultado: {resultado['valores']}" if resultado else ""
-                lineas.append(ft.Text(f"{orden['orden']['fecha_emision']} - Muestra {muestra.codigo}: {muestra.estado}{conclusion}"))
+                conclusion = f"resultado: {resultado['valores']}" if resultado else ""
+                lineas.append(ft.Row(controls=[
+                    ft.Text(f"{orden['orden']['fecha_emision']} - Muestra {muestra.codigo}:"),
+                    etiqueta_estado(muestra.estado),
+                    ft.Text(conclusion),
+                ]))
         self.detalle.controls = lineas
+        self.panel.mostrar()
 
     def _vaciar(self):
         self.id_en_edicion = None

@@ -5,8 +5,10 @@ from dao.reporte_dao import ReporteDAO
 from modelos.validaciones import FORMATO_FECHA_HORA, validar_fecha
 from negocio.gestor import ErrorNegocio, Gestor
 from negocio.gestor_atencion import GestorAtencion
-from reportes.generador_pdf import CARPETA_SALIDA, generar_pdf
+from reportes.exportadores import CARPETA_SALIDA, EXPORTADORES
 from reportes.reporte import Reporte
+
+FORMATOS = list(EXPORTADORES)
 
 ATENCIONES = "atenciones"
 RECHAZOS = "rechazos"
@@ -45,11 +47,15 @@ class GestorReportes(Gestor):
             raise ErrorNegocio(f"Reporte desconocido: {tipo}")
         return generadores[tipo](desde, hasta)
 
-    def exportar_pdf(self, tipo, reporte, carpeta=CARPETA_SALIDA):
+    def exportar(self, tipo, reporte, formato, carpeta=CARPETA_SALIDA):
+        """Guarda el reporte en el formato elegido (PDF, Excel o Markdown) y devuelve la ruta del archivo."""
+        if formato not in EXPORTADORES:
+            raise ErrorNegocio(f"Formato desconocido: {formato}")
+        exportador = EXPORTADORES[formato]()
         try:
-            return generar_pdf(reporte, tipo, carpeta)
+            return exportador.exportar(reporte, tipo, carpeta)
         except OSError as error:
-            raise ErrorNegocio(f"No se pudo guardar el PDF: {error}") from error
+            raise ErrorNegocio(f"No se pudo guardar el archivo: {error}") from error
 
     def atenciones(self, desde=None, hasta=None):
         inicio, fin, reporte = self._preparar(ATENCIONES, desde, hasta)

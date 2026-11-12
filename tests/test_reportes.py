@@ -1,4 +1,5 @@
 import pytest
+from openpyxl import load_workbook
 
 from datos.base_datos import conectar, inicializar
 from interfaz.aplicacion import Aplicacion
@@ -7,11 +8,13 @@ from negocio.gestor import ErrorNegocio
 from negocio.gestor_atencion import GestorAtencion
 from negocio.gestor_envios import GestorEnvios
 from negocio.gestor_laboratorio import GestorLaboratorio
-from negocio.gestor_reportes import (ATENCIONES, FACTURACION, NOMBRES_REPORTES, RECHAZOS, TIEMPOS, TRATAMIENTOS,
-                                     GestorReportes)
+from negocio.gestor_reportes import (ATENCIONES, FACTURACION, FORMATOS, NOMBRES_REPORTES, RECHAZOS, TIEMPOS,
+                                     TRATAMIENTOS, GestorReportes)
+from reportes.documentos import DocumentoExcel, DocumentoMarkdown, DocumentoPDF
+from reportes.exportadores import EXPORTADORES, Exportador
 from reportes.reporte import Reporte
 
-CENTRO, NORTE = "Clínica Centro", "Clínica Norte"
+CENTRO, NORTE, SUR = "Clínica Centro", "Clínica Norte", "Clínica Sur"
 TOBY, LUNA, SIMON = 1, 3, 4
 GOMEZ, RIOS = 1, 3
 HEMOGRAMA, BIOQUIMICO = 1, 2
@@ -70,6 +73,7 @@ def test_atenciones_cuenta_por_tipo_y_ordenes_por_clinica(ruta):
     assert tabla_de(GestorReportes(ruta).atenciones()) == [
         [CENTRO, 2, 0, 1, 3, 2],
         [NORTE, 0, 1, 0, 1, 0],
+        [SUR, 0, 0, 0, 0, 0],
     ]
 
 
@@ -84,7 +88,7 @@ def test_atenciones_filtra_por_periodo_incluyendo_los_extremos(ruta):
 
 def test_atenciones_sin_datos_muestra_las_clinicas_en_cero_y_sin_grafico(ruta):
     reporte = GestorReportes(ruta).atenciones()
-    assert tabla_de(reporte) == [[CENTRO, 0, 0, 0, 0, 0], [NORTE, 0, 0, 0, 0, 0]]
+    assert tabla_de(reporte) == [[CENTRO, 0, 0, 0, 0, 0], [NORTE, 0, 0, 0, 0, 0], [SUR, 0, 0, 0, 0, 0]]
     assert reporte.graficos == ()
 
 
@@ -262,33 +266,92 @@ def test_reporte_desconocido_es_rechazado(ruta):
         GestorReportes(ruta).generar("inventado")
 
 
-# PDF
+# Exportación (patrón Factory Method)
+
+FIRMAS = {"PDF": b"%PDF", "Excel": b"PK", "Markdown": b"# "}  # cómo empieza cada tipo de archivo
 
 
+@pytest.mark.parametrize("formato", FORMATOS)
 @pytest.mark.parametrize("tipo", list(NOMBRES_REPORTES))
-def test_pdf_se_genera_con_y_sin_datos(ruta, tmp_path, tipo):
+def test_cada_formato_se_genera_con_y_sin_datos(ruta, tmp_path, tipo, formato):
     gestor = GestorReportes(ruta)
-    vacio = gestor.exportar_pdf(tipo, gestor.generar(tipo), tmp_path)
+    vacio = gestor.exportar(tipo, gestor.generar(tipo), formato, tmp_path)
     CargaDemo(ruta).cargar()
-    con_datos = gestor.exportar_pdf(tipo, gestor.generar(tipo), tmp_path)
+    con_datos = gestor.exportar(tipo, gestor.generar(tipo), formato, tmp_path)
     assert vacio != con_datos
     for archivo in (vacio, con_datos):
-        assert archivo.read_bytes().startswith(b"%PDF")
-    assert con_datos.stat().st_size > vacio.stat().st_size
+        assert archivo.read_bytes().startswith(FIRMAS[formato])
+    assert con_datos.read_bytes() != vacio.read_bytes()
 
 
-def test_pdf_tolera_textos_con_caracteres_especiales(ruta, tmp_path):
+@pytest.mark.parametrize("formato, extension, clase", [
+    ("PDF", "pdf", DocumentoPDF),
+    ("Excel", "xlsx", DocumentoExcel),
+    ("Markdown", "md", DocumentoMarkdown),
+])
+def test_cada_exportador_crea_su_documento(tmp_path, formato, extension, clase):
+    exportador = EXPORTADORES[formato]()
+    assert isinstance(exportador, Exportador)
+    assert exportador.extension == extension
+    assert isinstance(exportador.crear_documento(tmp_path / f"x.{extension}"), clase)
+
+
+def test_excel_tiene_las_tablas_y_los_graficos(ruta, tmp_path):
+    CargaDemo(ruta).cargar()
+    gestor = GestorReportes(ruta)
+    reporte = gestor.generar(FACTURACION)
+    libro = load_workbook(gestor.exportar(FACTURACION, reporte, "Excel", tmp_path))
+    valores = [celda for fila in libro["Datos"].iter_rows(values_only=True) for celda in fila if celda]
+    assert reporte.titulo in valores
+    for tabla in reporte.tablas:
+        assert tabla.subtitulo in valores
+        assert all(columna in valores for columna in tabla.columnas)
+    assert len(libro["Gráficos"]._images) == len(reporte.graficos)
+
+
+def test_markdown_tiene_las_tablas_y_enlaza_los_graficos(ruta, tmp_path):
+    CargaDemo(ruta).cargar()
+    gestor = GestorReportes(ruta)
+    reporte = gestor.generar(FACTURACION)
+    archivo = gestor.exportar(FACTURACION, reporte, "Markdown", tmp_path)
+    texto = archivo.read_text(encoding="utf-8")
+    assert texto.startswith(f"# {reporte.titulo}")
+    for tabla in reporte.tablas:
+        assert f"## {tabla.subtitulo}" in texto
+        assert "| " + " | ".join(tabla.columnas) + " |" in texto
+    imagenes = sorted(tmp_path.glob(f"{archivo.stem}_grafico_*.png"))
+    assert len(imagenes) == len(reporte.graficos)
+    for imagen in imagenes:
+        assert f"]({imagen.name})" in texto
+        assert imagen.read_bytes().startswith(b"\x89PNG")
+
+
+@pytest.mark.parametrize("formato", FORMATOS)
+def test_exportar_tolera_textos_con_caracteres_especiales(ruta, tmp_path, formato):
     reporte = Reporte("Prueba <b> & cía", "todo")
-    reporte.agregar_tabla("Sub & título", ["A<1", "B"], [["R&D <x>", None]])
-    archivo = GestorReportes(ruta).exportar_pdf("prueba", reporte, tmp_path)
-    assert archivo.read_bytes().startswith(b"%PDF")
+    reporte.agregar_tabla("Sub & título", ["A<1", "B|C"], [["R&D <x>", None]])
+    archivo = GestorReportes(ruta).exportar("prueba", reporte, formato, tmp_path)
+    assert archivo.read_bytes().startswith(FIRMAS[formato])
 
 
-def test_error_al_guardar_el_pdf_da_un_mensaje_claro(ruta, tmp_path):
+def test_markdown_escapa_la_barra_para_no_romper_la_tabla(ruta, tmp_path):
+    reporte = Reporte("Prueba", "todo")
+    reporte.agregar_tabla("Tabla", ["A", "B"], [["x|y", None]])
+    texto = GestorReportes(ruta).exportar("prueba", reporte, "Markdown", tmp_path).read_text(encoding="utf-8")
+    assert "| x\\|y |  |" in texto
+
+
+def test_formato_desconocido_es_rechazado(ruta, tmp_path):
+    with pytest.raises(ErrorNegocio, match="Formato desconocido"):
+        GestorReportes(ruta).exportar(ATENCIONES, GestorReportes(ruta).atenciones(), "Word", tmp_path)
+
+
+@pytest.mark.parametrize("formato", FORMATOS)
+def test_error_al_guardar_da_un_mensaje_claro(ruta, tmp_path, formato):
     ocupado = tmp_path / "archivo"
     ocupado.write_text("no es una carpeta")
     with pytest.raises(ErrorNegocio, match="No se pudo guardar"):
-        GestorReportes(ruta).exportar_pdf(ATENCIONES, GestorReportes(ruta).atenciones(), ocupado)
+        GestorReportes(ruta).exportar(ATENCIONES, GestorReportes(ruta).atenciones(), formato, ocupado)
 
 
 # Datos de demostración
@@ -308,9 +371,33 @@ def test_demo_no_se_carga_dos_veces(ruta):
     assert CargaDemo(ruta).cargar() is False
 
 
-def test_demo_deja_una_muestra_lista_para_el_laboratorio(ruta):
+def test_demo_deja_muestras_listas_para_el_laboratorio(ruta):
     CargaDemo(ruta).cargar()
-    assert len(GestorLaboratorio(ruta).listar_muestras_recibidas()) == 1
+    assert len(GestorLaboratorio(ruta).listar_muestras_recibidas()) == 2
+
+
+def valores_distintos(ruta, sql):
+    conexion = conectar(ruta)
+    try:
+        return {fila[0] for fila in conexion.execute(sql)}
+    finally:
+        conexion.close()
+
+
+def test_demo_cubre_todas_las_opciones(ruta):
+    CargaDemo(ruta).cargar()
+    assert len(GestorAtencion(ruta).listar_consultas()) == 25
+    assert valores_distintos(ruta, "SELECT tipo FROM consultas") == {"Consulta", "Control", "Urgencia"}
+    assert valores_distintos(ruta, "SELECT clinica_id FROM consultas") == {1, 2, 3}
+    assert valores_distintos(ruta, "SELECT estado FROM turnos") == {"Reservado", "Atendido", "Cancelado"}
+    assert valores_distintos(ruta, "SELECT estado_actual FROM muestras") == {
+        "Extraída", "Empaquetada", "En tránsito", "Recibida", "Analizada", "Rechazada"}
+    assert valores_distintos(ruta, "SELECT estado_actual FROM remitos_biologicos") == {
+        "Emitido", "Despachado", "En tránsito", "Recibido", "Rechazado"}
+    assert valores_distintos(ruta, "SELECT estado FROM conservadoras") == {"Disponible", "En uso", "Fuera de servicio"}
+    assert valores_distintos(ruta, "SELECT tipo_analisis_id FROM muestras") == {1, 2, 3, 4, 5, 6}
+    assert valores_distintos(ruta, "SELECT prioridad FROM ordenes_derivacion") == {"Normal", "Urgente"}
+    assert valores_distintos(ruta, "SELECT estado_precinto FROM recepciones") == {"Intacto", "Roto"}
 
 
 # Pantalla
@@ -322,17 +409,21 @@ def abrir_reportes(ruta):
     return app.pantallas[-1]
 
 
-def test_pantalla_muestra_el_reporte_y_exporta_el_pdf(ruta, tmp_path, monkeypatch):
+@pytest.mark.parametrize("formato, extension", [("PDF", "pdf"), ("Excel", "xlsx"), ("Markdown", "md")])
+def test_pantalla_muestra_el_reporte_y_lo_exporta(ruta, tmp_path, monkeypatch, formato, extension):
     CargaDemo(ruta).cargar()
     pantalla = abrir_reportes(ruta)
+    assert pantalla.formato.value == "PDF"
     pantalla.tipo.value = FACTURACION
     pantalla.ver(None)
     assert len(pantalla.resultado.controls) == 4
-    original = pantalla.gestor.exportar_pdf
-    monkeypatch.setattr(pantalla.gestor, "exportar_pdf", lambda tipo, reporte: original(tipo, reporte, tmp_path))
+    original = pantalla.gestor.exportar
+    monkeypatch.setattr(pantalla.gestor, "exportar",
+                        lambda tipo, reporte, formato: original(tipo, reporte, formato, tmp_path))
+    pantalla.formato.value = formato
     pantalla.exportar(None)
-    assert "PDF guardado" in pantalla.mensaje.value
-    assert list(tmp_path.glob("facturacion_*.pdf"))
+    assert f"{formato} guardado" in pantalla.mensaje.value
+    assert list(tmp_path.glob(f"facturacion_*.{extension}"))
 
 
 def test_pantalla_avisa_si_no_hay_datos_o_falta_elegir(ruta):

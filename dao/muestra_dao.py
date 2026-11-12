@@ -30,6 +30,44 @@ class MuestraDAO(BaseDAO):
         filas = self._conexion.execute("SELECT * FROM muestras WHERE remito_id = ? ORDER BY id", (remito_id,)).fetchall()
         return [self._a_muestra(fila) for fila in filas]
 
+    def listar_detallado(self, busqueda="", estado=None):
+        """Todas las muestras con su estado, mascota, análisis, laboratorio y remito.
+
+        Filtra por código de muestra o nombre de mascota y, si se indica, por estado.
+        """
+        texto = f"%{busqueda}%"
+        return self._conexion.execute(
+            """SELECT m.id, m.codigo, m.estado_actual AS estado, m.fecha_extraccion, t.nombre AS analisis,
+                      ma.nombre AS mascota, l.nombre AS laboratorio, r.numero AS remito
+               FROM muestras m
+               JOIN tipos_analisis t ON t.id = m.tipo_analisis_id
+               JOIN ordenes_derivacion o ON o.id = m.orden_id
+               JOIN laboratorios l ON l.id = o.laboratorio_id
+               JOIN consultas c ON c.id = o.consulta_id
+               JOIN historias_clinicas h ON h.id = c.historia_id
+               JOIN mascotas ma ON ma.id = h.mascota_id
+               LEFT JOIN remitos_biologicos r ON r.id = m.remito_id
+               WHERE (m.codigo LIKE ? OR ma.nombre LIKE ?)
+                 AND (? IS NULL OR m.estado_actual = ?)
+               ORDER BY m.id DESC""",
+            (texto, texto, estado, estado),
+        ).fetchall()
+
+    def listar_estados_por_consulta(self):
+        """Código y estado de cada muestra, junto con la consulta que la originó."""
+        return self._conexion.execute(
+            """SELECT o.consulta_id, m.codigo, m.estado_actual AS estado
+               FROM muestras m
+               JOIN ordenes_derivacion o ON o.id = m.orden_id
+               ORDER BY m.id"""
+        ).fetchall()
+
+    def contar_por_estado(self):
+        filas = self._conexion.execute(
+            "SELECT estado_actual, COUNT(*) AS cantidad FROM muestras GROUP BY estado_actual"
+        ).fetchall()
+        return {f["estado_actual"]: f["cantidad"] for f in filas}
+
     def listar_para_empaquetar(self):
         return self._conexion.execute(
             """SELECT m.id, m.codigo, t.nombre AS analisis, t.temp_min, t.temp_max,

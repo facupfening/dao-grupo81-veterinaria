@@ -8,6 +8,7 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | --- | --- |
 | Flet para la interfaz | La guía de la materia ya muestra la separación en capas |
 | `sqlite3` directo con DAO, sin SQLAlchemy | El diseño depende de triggers y `CHECK` propios de SQLite |
+| `openpyxl` para exportar a Excel | Se pidió exportar a Excel y la librería estándar no escribe `.xlsx`. Es la única librería que se agregó fuera de las vistas en la materia |
 | Versiones fijas en `requirements.txt` | Flet cambia rápido y su API varía entre versiones |
 | Entorno virtual en `.venv`, dentro del proyecto | Es lo que indica la guía de Flet de la materia. No se comparte: cada integrante crea el suyo |
 
@@ -16,7 +17,8 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Decisión | Motivo |
 | --- | --- |
 | State para muestra y remito | Lo exige la presentación del grupo |
-| DAO como segundo patrón | Ya se usa para el acceso a datos y la materia lo presenta como patrón. Si la cátedra no lo acepta, la alternativa simple es Singleton para la conexión |
+| DAO como segundo patrón | Ya se usa para el acceso a datos y la materia lo presenta como patrón. Si la cátedra no lo acepta, queda Factory Method |
+| Factory Method para exportar reportes | Hay tres formatos (PDF, Excel, Markdown) que siguen los mismos pasos y solo difieren en el documento que se crea. Es la versión del libro de patrones: un método fábrica abstracto (`crear_documento`) que cada subclase redefine. Agregar un formato no cambia el gestor ni la pantalla |
 
 ## Trazabilidad y envíos
 
@@ -54,6 +56,9 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | No se borra un cliente con mascotas ni una mascota con turnos o consultas | Se conserva la trazabilidad |
 | Códigos de muestras, remitos, precintos y comprobantes generados automáticamente (`M-000001`) | Garantiza que sean únicos. El precinto podría venir impreso; se puede cambiar si se pide |
 | Los datos de ejemplo no incluyen atenciones | Se generan con los procesos, para que los historiales queden completos. Para eso está `cargar_demo.py` |
+| La demostración carga 25 consultas que cubren todas las opciones | Así cada reporte, filtro y estado se puede mostrar sin cargar datos a mano. Los clientes y mascotas nuevos también se dan de alta con los gestores |
+| La demostración deja muestras a mitad de camino (Extraídas, Empaquetadas, En tránsito y Recibidas) | Para poder empaquetar, despachar, recibir y cargar resultados en vivo desde la interfaz. La conservadora REF-01 queda Disponible para empaquetar |
+| Se agregaron una clínica, un veterinario, un laboratorio y un transportista a los datos de ejemplo | Con tres clínicas y tres transportistas los gráficos de los reportes comparan más de dos barras |
 | Un detalle de comprobante corresponde a una consulta o a una muestra, nunca a ambas | Permite desglosar la facturación por servicio |
 
 ## Facturación
@@ -73,7 +78,10 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | El tiempo de procesamiento solo cuenta muestras analizadas | Las demás no tienen resultado |
 | Los promedios generales ponderan por cantidad | El promedio de promedios daría un valor incorrecto |
 | Las vacunas se evalúan al último día del período, o a la fecha actual si no se indica | Da una foto coherente con el período pedido |
-| Los gráficos solo aparecen en el PDF | Es lo que muestra la materia con ReportLab y Matplotlib, y mantiene simple la pantalla |
+| Los gráficos solo aparecen en el archivo exportado, no en pantalla | Es lo que muestra la materia con ReportLab y Matplotlib, y mantiene simple la pantalla |
+| Los tres formatos llevan las mismas tablas y gráficos | El reporte se arma una sola vez (`Reporte`) y cada exportador solo cambia cómo se escribe |
+| En Excel, las tablas van en la hoja "Datos" y los gráficos en la hoja "Gráficos" | Las imágenes no tapan los datos, sin calcular cuántas filas ocupa cada tabla |
+| En Markdown, cada gráfico se guarda como PNG al lado del `.md`, que lo enlaza | Markdown es texto y no puede llevar la imagen adentro |
 
 ## Interfaz
 
@@ -95,6 +103,12 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Cada botón "Nuevo …" vacía su formulario con `vaciar()` antes de abrir la ventana | Evita que aparezcan datos de una carga anterior. En los desplegables también se borra `text`, porque Flet sigue mostrando la opción anterior aunque el valor sea `None` |
 | Las vacunas y muestras agregadas se muestran como lista (`item_de_lista()`), cada una con un botón para quitarla | Se ve qué se va a registrar y se puede corregir antes de guardar |
 | `Dialogo.abrir()` no hace nada si la ventana ya está abierta | Un doble clic hacía que Flet lanzara `RuntimeError: Dialog is already opened` |
+| Sección propia "Muestras" con `GestorMuestras`, que solo consulta | La trazabilidad atraviesa varios procesos (atención, envíos, laboratorio); un gestor aparte evita repartirla. No cambia estados: eso sigue en los gestores de cada proceso |
+| Cada estado tiene un color fijo (`COLORES_ESTADO`) y se muestra con `etiqueta_estado()` en todas las pantallas | Se reconoce la etapa de un vistazo. Los estados de remito usan el color del estado de muestra equivalente |
+| La trazabilidad (Muestras, Envíos), la historia clínica y el detalle de comprobante se abren en un `PanelLateral` a la derecha, que se cierra con la X | Se ve el detalle sin perder el listado. Flet lo permite con una fila de dos columnas, así que no hizo falta una ventana emergente |
+| En Muestras, Envíos y comprobantes, tocar la fila también abre el detalle | En pantallas angostas la columna de acciones queda fuera de la vista |
+| En Consultas, las muestras se muestran en grilla de hasta 3 por renglón y la fila crece en alto | La fila no se estira a lo ancho cuando una consulta tiene muchas muestras |
+| El recorrido de una muestra indica el próximo paso y en qué pantalla se hace | Responde "¿dónde está y qué falta?" sin tener que conocer el flujo |
 | Laboratorio muestra las muestras pendientes de resultado y todos los comprobantes, no solo el último | Se puede volver a consultar cualquier comprobante. La búsqueda es por número o por nombre del cliente, igual que la de clientes |
 
 ## Clases del dominio

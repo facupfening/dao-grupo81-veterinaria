@@ -23,7 +23,7 @@
 <body>
 <header>
   <h1>Veterinaria, grupo 81: diagramas</h1>
-  <nav><a href="#der">DER</a><a href="#dominio">Clases: dominio y State</a><a href="#capas">Clases: capas</a></nav>
+  <nav><a href="#der">DER</a><a href="#clases_general">Clases: general</a><a href="#clases_capas">Capas</a><a href="#patron_state">State</a><a href="#estados_muestra">Estados de la muestra</a><a href="#estados_remito">Estados del remito</a><a href="#patron_dao">DAO</a><a href="#patron_factory_method">Factory Method</a></nav>
 </header>
 
 <section id="der">
@@ -33,6 +33,8 @@
       <li><b>PK</b> clave primaria, <b>FK</b> clave foránea, <b>UK</b> valor único.</li>
       <li>Patas de gallo: <code>||</code> exactamente uno, <code>o|</code> cero o uno, <code>o{</code> cero o muchos, <code>|{</code> uno o muchos.</li>
       <li>Tres bloques: atención clínica (clientes → mascotas → consultas), derivación (órdenes → muestras → remitos) y facturación (comprobantes → detalles).</li>
+      <li>Además del DER, la base tiene <code>CHECK</code> para los estados y tipos, y 6 triggers: 4 hacen inmutables los historiales de estado y 2 impiden turnos superpuestos del mismo veterinario.</li>
+      <li>Controlado contra la base real el 2026-11-12: las 25 tablas, todas sus columnas en orden y todas las claves foráneas.</li>
     </ul>
   </div>
   <button data-descargar="der" data-tipo="svg">Descargar SVG</button>
@@ -283,43 +285,196 @@ erDiagram
   </pre>
 </section>
 
-<section id="dominio">
-  <h2>Clases: dominio y patrón State (modelos/ y estados/)</h2>
+<section id="clases_general">
+  <h2>Clases: diagrama general del sistema</h2>
   <div class="ayuda">
     <ul>
-      <li>Flecha con triángulo vacío: herencia. <code>Muestra</code> y <code>Remito</code> heredan de <code>Trazable</code>.</li>
-      <li>Rombo lleno: composición, porque el historial pertenece al objeto. Rombo vacío: agregación, porque el remito agrupa muestras que existen por su cuenta.</li>
-      <li>Flecha simple: el objeto conoce su estado actual. Cada estado concreto redefine solo las transiciones que permite.</li>
+      <li>Una clase base por capa: <code>Pantalla</code> (interfaz/), <code>Gestor</code> (negocio/) y <code>BaseDAO</code> (dao/), más el dominio (modelos/ y estados/) y los reportes (reportes/).</li>
+      <li>Una operación recorre el diagrama de arriba hacia abajo: la pantalla llama a un gestor, el gestor usa los DAO y los objetos del dominio, y los DAO hablan con la base.</li>
+      <li>Flecha con triángulo vacío: herencia. Rombo lleno: composición. Rombo vacío: agregación. Flecha punteada: una clase usa o crea a la otra.</li>
+      <li>Las subclases están en los diagramas siguientes: capas (pantallas y gestores) y un diagrama por patrón (estados, DAO, exportadores y documentos).</li>
     </ul>
   </div>
-  <button data-descargar="dominio" data-tipo="svg">Descargar SVG</button>
-  <button data-descargar="dominio" data-tipo="png">Descargar PNG</button>
-  <div class="lienzo" id="lienzo-dominio"></div>
-  <pre class="fuente" id="fuente-dominio">
+  <button data-descargar="clases_general" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="clases_general" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-clases_general"></div>
+  <pre class="fuente" id="fuente-clases_general">
 classDiagram
-    %% Diagrama de clases del dominio y del patrón State (carpetas modelos/ y estados/).
+    %% Diagrama general: una clase base por capa, el dominio y los reportes.
     direction TB
 
+    class Aplicacion {
+        +pantallas : list
+        +abrir(indice)
+    }
+    class Pantalla {
+        &lt;&lt;abstract&gt;&gt;
+        +titulo
+        +mensaje
+        +controles()*
+        +refrescar()
+        #_intentar(accion)
+    }
+    class Dialogo {
+        +abrir(pagina, titulo)
+        +cerrar()
+    }
+    class PanelLateral {
+        +mostrar()
+        +cerrar()
+    }
+    class Gestor {
+        -_ruta
+        #_transaccion()
+        #_exigir(valor, mensaje)
+    }
+    class ErrorNegocio {
+        &lt;&lt;exception&gt;&gt;
+    }
+    class BaseDAO {
+        -_conexion
+        #_leer_historial(tabla, columna, id)
+        #_guardar_historial(tabla, columna, id, historial)
+    }
     class Cliente {
-        +id
         +dni
         +nombre
         +apellido
-        +telefono
-        +email
-        +direccion
     }
     class Mascota {
-        +id
         +cliente_id
         +especie_id
         +nombre
-        +raza
-        +sexo
-        +fecha_nacimiento
-        +peso_kg
     }
+    class Trazable {
+        +estado : str
+        +historial : tuple
+        +cambiar_estado(estado_nuevo, fecha_hora, responsable)
+    }
+    class RegistroEstado {
+        +estado
+        +fecha_hora
+        +responsable
+    }
+    class Muestra {
+        +codigo
+        +empaquetar()
+        +recibir()
+        +analizar()
+    }
+    class Remito {
+        +numero
+        +muestras : tuple
+        +despachar()
+        +registrar_recepcion(estado_precinto)
+    }
+    class EstadoMuestra {
+        &lt;&lt;abstract&gt;&gt;
+    }
+    class EstadoRemito {
+        &lt;&lt;abstract&gt;&gt;
+    }
+    class Reporte {
+        +titulo
+        +periodo
+        +agregar_tabla()
+        +agregar_grafico()
+    }
+    class Exportador {
+        &lt;&lt;abstract&gt;&gt;
+        +exportar(reporte, nombre_archivo, carpeta)
+        +crear_documento(ruta)*
+    }
+    class Documento {
+        &lt;&lt;abstract&gt;&gt;
+    }
+
+    Aplicacion "1" *-- "9" Pantalla : muestra
+    Pantalla "1" *-- "0..*" Dialogo : altas
+    Pantalla "1" *-- "0..1" PanelLateral : detalle
+    Pantalla ..&gt; Gestor : usa
+    Gestor ..&gt; ErrorNegocio : lanza
+    Gestor ..&gt; BaseDAO : usa
+    Gestor ..&gt; Trazable : cambia el estado
+    Gestor ..&gt; Reporte : arma
+    Gestor ..&gt; Exportador : usa
+    BaseDAO ..&gt; Trazable : lee y guarda
+    BaseDAO ..&gt; Cliente : lee y guarda
+    BaseDAO ..&gt; Mascota : lee y guarda
+
     Cliente "1" -- "0..*" Mascota : es responsable de
+    Trazable &lt;|-- Muestra
+    Trazable &lt;|-- Remito
+    Trazable "1" *-- "1..*" RegistroEstado : historial
+    Remito "0..1" o-- "0..*" Muestra : agrupa
+    Muestra --&gt; "1" EstadoMuestra : estado actual
+    Remito --&gt; "1" EstadoRemito : estado actual
+    Exportador ..&gt; Documento : crea
+  </pre>
+</section>
+
+<section id="clases_capas">
+  <h2>Clases: capas (interfaz/ y negocio/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Cada sección de la aplicación es una subclase de <code>Pantalla</code>, y cada proceso del negocio una subclase de <code>Gestor</code>.</li>
+      <li>Qué gestor usa cada pantalla: Clientes → <code>GestorClientes</code>; Mascotas → <code>GestorMascotas</code>; Turnos y Consultas → <code>GestorAtencion</code>; Empaquetado y Envíos → <code>GestorEnvios</code>; Laboratorio → <code>GestorLaboratorio</code>; Muestras → <code>GestorMuestras</code>; Reportes → <code>GestorReportes</code>. <code>GestorCatalogos</code> llena las listas desplegables de varias pantallas.</li>
+      <li>Las pantallas no tienen SQL ni reglas de negocio: solo toman los datos y llaman al gestor.</li>
+    </ul>
+  </div>
+  <button data-descargar="clases_capas" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="clases_capas" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-clases_capas"></div>
+  <pre class="fuente" id="fuente-clases_capas">
+classDiagram
+    %% Herencia de las pantallas y de los gestores.
+    direction TB
+
+    class Pantalla {
+        &lt;&lt;abstract&gt;&gt;
+        +controles()*
+        +refrescar()
+    }
+    class Gestor {
+        #_transaccion()
+    }
+    Pantalla &lt;|-- PantallaClientes
+    Pantalla &lt;|-- PantallaMascotas
+    Pantalla &lt;|-- PantallaTurnos
+    Pantalla &lt;|-- PantallaConsultas
+    Pantalla &lt;|-- PantallaEmpaquetado
+    Pantalla &lt;|-- PantallaEnvios
+    Pantalla &lt;|-- PantallaLaboratorio
+    Pantalla &lt;|-- PantallaMuestras
+    Pantalla &lt;|-- PantallaReportes
+    Gestor &lt;|-- GestorClientes
+    Gestor &lt;|-- GestorMascotas
+    Gestor &lt;|-- GestorAtencion
+    Gestor &lt;|-- GestorCatalogos
+    Gestor &lt;|-- GestorEnvios
+    Gestor &lt;|-- GestorLaboratorio
+    Gestor &lt;|-- GestorMuestras
+    Gestor &lt;|-- GestorReportes
+  </pre>
+</section>
+
+<section id="patron_state">
+  <h2>Patrón State: clases (modelos/ y estados/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li><b>Contexto:</b> <code>Muestra</code> y <code>Remito</code>, que heredan de <code>Trazable</code>. Guardan su estado actual y le delegan cada operación.</li>
+      <li><b>Estado:</b> <code>EstadoMuestra</code> y <code>EstadoRemito</code> (abstractas). Por defecto rechazan todo con <code>TransicionInvalida</code>.</li>
+      <li><b>Estados concretos:</b> cada subclase redefine solo las transiciones que permite y le pone al contexto el estado siguiente.</li>
+      <li>Cada cambio de estado agrega un <code>RegistroEstado</code> al historial, que nunca se modifica.</li>
+    </ul>
+  </div>
+  <button data-descargar="patron_state" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="patron_state" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-patron_state"></div>
+  <pre class="fuente" id="fuente-patron_state">
+classDiagram
+    %% Patrón State: Muestra y Remito delegan sus operaciones en su estado actual.
+    direction TB
 
     class Trazable {
         -_estado
@@ -352,12 +507,12 @@ classDiagram
         +clinica_id
         +laboratorio_id
         +conservadora_id
-        +fecha_emision
         +muestras : tuple
         +agregar_muestra(muestra)
         +despachar()
         +registrar_tramo()
         +registrar_recepcion(estado_precinto)
+        +incorporar_muestra(muestra)
         +verificar_muestras(estado_esperado)
     }
 
@@ -375,10 +530,19 @@ classDiagram
         +rechazar(muestra)
         +analizar(muestra)
     }
-    class Extraida
-    class Empaquetada
-    class EnTransitoMuestra["EnTransito"]
-    class Recibida
+    class Extraida {
+        +empaquetar(muestra)
+    }
+    class Empaquetada {
+        +iniciar_transito(muestra)
+    }
+    class EnTransitoMuestra["EnTransito"] {
+        +recibir(muestra)
+        +rechazar(muestra)
+    }
+    class Recibida {
+        +analizar(muestra)
+    }
     class Analizada
     class Rechazada
     EstadoMuestra &lt;|-- Extraida
@@ -397,9 +561,17 @@ classDiagram
         +registrar_tramo(remito)
         +registrar_recepcion(remito, estado_precinto)
     }
-    class Emitido
-    class Despachado
-    class EnTransitoRemito["EnTransito"]
+    class Emitido {
+        +agregar_muestra(remito, muestra)
+        +despachar(remito)
+    }
+    class Despachado {
+        +registrar_tramo(remito)
+    }
+    class EnTransitoRemito["EnTransito"] {
+        +registrar_tramo(remito)
+        +registrar_recepcion(remito, estado_precinto)
+    }
     class Recibido
     class Rechazado
     EstadoRemito &lt;|-- Emitido
@@ -417,103 +589,185 @@ classDiagram
   </pre>
 </section>
 
-<section id="capas">
-  <h2>Clases: capas (interfaz/ → negocio/ → dao/)</h2>
+<section id="estados_muestra">
+  <h2>Patrón State: transiciones de la muestra</h2>
   <div class="ayuda">
     <ul>
-      <li>Muestra la herencia de cada capa: todas las pantallas heredan de <code>Pantalla</code>, los gestores de <code>Gestor</code> y los DAO de <code>BaseDAO</code>.</li>
-      <li>Las flechas punteadas marcan el uso entre capas para un ejemplo: empaquetar muestras.</li>
+      <li>Cada flecha es un método que el estado de origen permite. Cualquier otro método lanza <code>TransicionInvalida</code>.</li>
+      <li>La muestra cambia junto con su remito: al empaquetarla, en el primer tramo después del despacho y en la recepción.</li>
     </ul>
   </div>
-  <button data-descargar="capas" data-tipo="svg">Descargar SVG</button>
-  <button data-descargar="capas" data-tipo="png">Descargar PNG</button>
-  <div class="lienzo" id="lienzo-capas"></div>
-  <pre class="fuente" id="fuente-capas">
+  <button data-descargar="estados_muestra" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="estados_muestra" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-estados_muestra"></div>
+  <pre class="fuente" id="fuente-estados_muestra">
+stateDiagram-v2
+    direction LR
+    state "Extraída" as Extraida
+    state "Empaquetada" as Empaquetada
+    state "En tránsito" as EnTransito
+    state "Recibida" as Recibida
+    state "Analizada" as Analizada
+    state "Rechazada" as Rechazada
+    [*] --&gt; Extraida : emitir_orden()
+    Extraida --&gt; Empaquetada : empaquetar()
+    Empaquetada --&gt; EnTransito : iniciar_transito()
+    EnTransito --&gt; Recibida : recibir() con precinto intacto
+    EnTransito --&gt; Rechazada : rechazar() con precinto roto
+    Recibida --&gt; Analizada : analizar()
+    Analizada --&gt; [*]
+    Rechazada --&gt; [*]
+  </pre>
+</section>
+
+<section id="estados_remito">
+  <h2>Patrón State: transiciones del remito</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Mientras está Emitido se le agregan muestras (<code>agregar_muestra()</code>) sin cambiar de estado.</li>
+      <li>Un remito Despachado pasa a En tránsito con el primer traspaso o arribo (<code>registrar_tramo()</code>). Los tramos siguientes no cambian el estado.</li>
+      <li>En la recepción (<code>registrar_recepcion()</code>), el precinto decide: intacto pasa a Recibido y roto a Rechazado, y el remito arrastra a todas sus muestras.</li>
+    </ul>
+  </div>
+  <button data-descargar="estados_remito" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="estados_remito" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-estados_remito"></div>
+  <pre class="fuente" id="fuente-estados_remito">
+stateDiagram-v2
+    direction LR
+    state "Emitido" as Emitido
+    state "Despachado" as Despachado
+    state "En tránsito" as EnTransito
+    state "Recibido" as Recibido
+    state "Rechazado" as Rechazado
+    [*] --&gt; Emitido : empaquetar()
+    Emitido --&gt; Despachado : despachar()
+    Despachado --&gt; EnTransito : registrar_tramo()
+    EnTransito --&gt; Recibido : recepción, precinto intacto
+    EnTransito --&gt; Rechazado : recepción, precinto roto
+    Recibido --&gt; [*]
+    Rechazado --&gt; [*]
+  </pre>
+</section>
+
+<section id="patron_dao">
+  <h2>Patrón DAO: acceso a datos (dao/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Un DAO por entidad principal: todo el SQL está en estas clases. Los gestores nunca escriben SQL.</li>
+      <li>El gestor abre la transacción con <code>_transaccion()</code> y le pasa la misma conexión a cada DAO que usa: si algo falla, se deshace todo junto.</li>
+      <li>Los DAO de muestras y remitos arman los objetos del dominio y guardan solo los registros nuevos del historial (<code>_guardar_historial</code>).</li>
+      <li>Se muestran los métodos principales de cada DAO.</li>
+    </ul>
+  </div>
+  <button data-descargar="patron_dao" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="patron_dao" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-patron_dao"></div>
+  <pre class="fuente" id="fuente-patron_dao">
 classDiagram
-    %% Diagrama de clases por capas: interfaz/ → negocio/ → dao/.
-    %% Muestra la herencia de cada capa y el camino de una operación de ejemplo (empaquetar).
+    %% Patrón DAO: BaseDAO y un DAO por entidad. Todos reciben la conexión que abre el gestor.
     direction TB
 
-    class Aplicacion {
-        +pantallas
-        +cambiar_seccion()
+    class base_datos {
+        &lt;&lt;módulo&gt;&gt;
+        +conectar(ruta)
+        +transaccion(ruta)
     }
-    class Pantalla {
-        &lt;&lt;abstract&gt;&gt;
-        +controles()*
-        +refrescar()
-        +build()
-    }
-    class PantallaClientes
-    class PantallaMascotas
-    class PantallaTurnos
-    class PantallaConsultas
-    class PantallaEmpaquetado
-    class PantallaEnvios
-    class PantallaLaboratorio
-    class PantallaReportes
-
     class Gestor {
         -_ruta
-        -_transaccion()
-        -_exigir(valor, mensaje)
+        #_transaccion()
     }
-    class ErrorNegocio {
-        &lt;&lt;exception&gt;&gt;
-    }
-    class GestorClientes
-    class GestorMascotas
-    class GestorAtencion
-    class GestorCatalogos
-    class GestorEnvios
-    class GestorLaboratorio
-    class GestorReportes
-
     class BaseDAO {
         -_conexion
-        -_leer_historial()
-        -_guardar_historial()
+        #_siguiente_codigo(tabla, prefijo)
+        #_leer_historial(tabla, columna, id)
+        #_guardar_historial(tabla, columna, id, historial)
     }
-    class ClienteDAO
-    class MascotaDAO
-    class TurnoDAO
-    class ConsultaDAO
-    class VacunaDAO
-    class OrdenDAO
-    class MuestraDAO
-    class RemitoDAO
-    class ConservadoraDAO
-    class ComprobanteDAO
-    class CatalogoDAO
-    class ReporteDAO
-
-    class Reporte {
-        +titulo
-        +periodo
-        +agregar_tabla()
-        +agregar_grafico()
+    class ClienteDAO {
+        +crear(cliente)
+        +obtener_por_id(id)
+        +obtener_por_dni(dni)
+        +listar()
+        +buscar_por_apellido(apellido)
+        +actualizar(cliente)
+        +eliminar(id)
     }
-    class TablaReporte
-    class GraficoReporte
+    class MascotaDAO {
+        +crear(mascota)
+        +obtener_por_id(id)
+        +listar()
+        +actualizar(mascota)
+        +eliminar(id)
+        +crear_historia()
+        +obtener_historia(id)
+    }
+    class TurnoDAO {
+        +crear()
+        +obtener_por_id(id)
+        +listar_por_veterinario(id)
+        +cambiar_estado(id, estado)
+    }
+    class ConsultaDAO {
+        +crear()
+        +obtener_por_id(id)
+        +listar_detallado()
+    }
+    class VacunaDAO {
+        +obtener_por_id(id)
+        +registrar_aplicacion()
+        +listar_obligatorias_con_ultima_aplicacion()
+    }
+    class OrdenDAO {
+        +crear()
+        +obtener_por_id(id)
+    }
+    class MuestraDAO {
+        +siguiente_codigo()
+        +crear(muestra)
+        +obtener_por_id(id) Muestra
+        +guardar_estado(muestra)
+        +listar_detallado()
+        +crear_resultado()
+    }
+    class RemitoDAO {
+        +siguiente_numero()
+        +crear(remito)
+        +obtener_por_id(id) Remito
+        +guardar_estado(remito)
+        +crear_evento()
+        +crear_recepcion()
+    }
+    class ConservadoraDAO {
+        +obtener_por_id(id)
+        +listar_disponibles()
+        +cambiar_estado(id, estado)
+    }
+    class ComprobanteDAO {
+        +crear()
+        +agregar_detalle()
+        +listar(busqueda)
+        +listar_analisis_a_facturar()
+    }
+    class CatalogoDAO {
+        +listar_veterinarios()
+        +listar_laboratorios()
+        +listar_tipos_analisis()
+        +listar_transportistas()
+    }
+    class ReporteDAO {
+        +atenciones_por_clinica()
+        +muestras_rechazadas()
+        +tratamientos()
+        +facturacion()
+        +tiempos_de_transito()
+        +tiempos_de_procesamiento()
+    }
 
-    Aplicacion "1" *-- "8" Pantalla : muestra
-    Pantalla &lt;|-- PantallaClientes
-    Pantalla &lt;|-- PantallaMascotas
-    Pantalla &lt;|-- PantallaTurnos
-    Pantalla &lt;|-- PantallaConsultas
-    Pantalla &lt;|-- PantallaEmpaquetado
-    Pantalla &lt;|-- PantallaEnvios
-    Pantalla &lt;|-- PantallaLaboratorio
-    Pantalla &lt;|-- PantallaReportes
-
-    Gestor ..&gt; ErrorNegocio : lanza
-    Gestor &lt;|-- GestorClientes
-    Gestor &lt;|-- GestorMascotas
-    Gestor &lt;|-- GestorAtencion
-    Gestor &lt;|-- GestorCatalogos
-    Gestor &lt;|-- GestorEnvios
-    Gestor &lt;|-- GestorLaboratorio
-    Gestor &lt;|-- GestorReportes
+    class Cliente
+    class Mascota
+    class Muestra
+    class Remito
+    class RegistroEstado
 
     BaseDAO &lt;|-- ClienteDAO
     BaseDAO &lt;|-- MascotaDAO
@@ -527,17 +781,100 @@ classDiagram
     BaseDAO &lt;|-- ComprobanteDAO
     BaseDAO &lt;|-- CatalogoDAO
     BaseDAO &lt;|-- ReporteDAO
+    Gestor ..&gt; base_datos : abre la transacción
+    Gestor ..&gt; BaseDAO : crea con la conexión
+    BaseDAO ..&gt; RegistroEstado : lee el historial
+    ClienteDAO ..&gt; Cliente : arma
+    MascotaDAO ..&gt; Mascota : arma
+    MuestraDAO ..&gt; Muestra : arma y guarda
+    RemitoDAO ..&gt; Remito : arma y guarda
+  </pre>
+</section>
 
-    %% Ejemplo de una operación que cruza las capas: empaquetar muestras.
-    PantallaEmpaquetado ..&gt; GestorEnvios : usa
-    GestorEnvios ..&gt; RemitoDAO : usa
-    GestorEnvios ..&gt; MuestraDAO : usa
-    GestorEnvios ..&gt; ConservadoraDAO : usa
+<section id="patron_factory_method">
+  <h2>Patrón Factory Method: exportar reportes (reportes/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li><b>Creador:</b> <code>Exportador</code>. Su <code>exportar()</code> tiene los pasos comunes y llama al método fábrica <code>crear_documento()</code>.</li>
+      <li><b>Creadores concretos:</b> cada exportador redefine <code>crear_documento()</code> y devuelve el documento de su formato.</li>
+      <li><b>Producto:</b> <code>Documento</code> (abstracto). <b>Productos concretos:</b> <code>DocumentoPDF</code>, <code>DocumentoExcel</code> y <code>DocumentoMarkdown</code>.</li>
+      <li><code>GestorReportes</code> elige la clase con el diccionario <code>EXPORTADORES</code> y solo conoce las clases abstractas.</li>
+    </ul>
+  </div>
+  <button data-descargar="patron_factory_method" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="patron_factory_method" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-patron_factory_method"></div>
+  <pre class="fuente" id="fuente-patron_factory_method">
+classDiagram
+    %% Patrón Factory Method aplicado a la exportación de reportes (reportes/exportadores.py y reportes/documentos.py).
+    direction TB
 
+    class GestorReportes {
+        +generar(tipo, desde, hasta) Reporte
+        +exportar(tipo, reporte, formato, carpeta) ruta
+    }
+    class Reporte {
+        +titulo
+        +periodo
+        +tablas
+        +graficos
+    }
+    class TablaReporte {
+        +subtitulo
+        +columnas
+        +filas
+    }
+    class GraficoReporte {
+        +titulo
+        +etiquetas
+        +valores
+        +unidad
+    }
+
+    class Exportador {
+        &lt;&lt;abstract&gt;&gt;
+        +extension
+        +exportar(reporte, nombre_archivo, carpeta) ruta
+        +crear_documento(ruta)* Documento
+    }
+    class ExportadorPDF {
+        +crear_documento(ruta) DocumentoPDF
+    }
+    class ExportadorExcel {
+        +crear_documento(ruta) DocumentoExcel
+    }
+    class ExportadorMarkdown {
+        +crear_documento(ruta) DocumentoMarkdown
+    }
+
+    class Documento {
+        &lt;&lt;abstract&gt;&gt;
+        +ruta
+        +agregar_encabezado(titulo, periodo)*
+        +agregar_tabla(tabla)*
+        +agregar_grafico(grafico)*
+        +guardar()*
+    }
+    class DocumentoPDF
+    class DocumentoExcel
+    class DocumentoMarkdown
+
+    Exportador &lt;|-- ExportadorPDF
+    Exportador &lt;|-- ExportadorExcel
+    Exportador &lt;|-- ExportadorMarkdown
+    Documento &lt;|-- DocumentoPDF
+    Documento &lt;|-- DocumentoExcel
+    Documento &lt;|-- DocumentoMarkdown
+
+    Exportador ..&gt; Documento : crea y arma
+    ExportadorPDF ..&gt; DocumentoPDF : crea
+    ExportadorExcel ..&gt; DocumentoExcel : crea
+    ExportadorMarkdown ..&gt; DocumentoMarkdown : crea
+    GestorReportes ..&gt; Exportador : usa
+    GestorReportes ..&gt; Reporte : arma
     Reporte "1" *-- "0..*" TablaReporte
     Reporte "1" *-- "0..*" GraficoReporte
-    GestorReportes ..&gt; ReporteDAO : usa
-    GestorReportes ..&gt; Reporte : arma
+    Exportador ..&gt; Reporte : lee
   </pre>
 </section>
 
@@ -548,7 +885,7 @@ classDiagram
   mermaid.initialize({ startOnLoad: false, theme: "default", htmlLabels: false,
                        class: { htmlLabels: false }, flowchart: { htmlLabels: false } });
 
-  for (const nombre of ["der", "dominio", "capas"]) {
+  for (const nombre of ["der", "clases_general", "clases_capas", "patron_state", "estados_muestra", "estados_remito", "patron_dao", "patron_factory_method"]) {
     const fuente = document.getElementById(`fuente-${nombre}`).textContent;
     const lienzo = document.getElementById(`lienzo-${nombre}`);
     try {

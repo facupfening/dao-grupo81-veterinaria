@@ -7,6 +7,7 @@ from negocio.gestor_clientes import GestorClientes
 from negocio.gestor_envios import GestorEnvios
 from negocio.gestor_laboratorio import GestorLaboratorio
 from negocio.gestor_mascotas import GestorMascotas
+from negocio.gestor_muestras import GestorMuestras
 
 RESPONSABLE = "Laura Gómez"
 HEMOGRAMA, BIOQUIMICO, HISTOPATOLOGIA = 1, 2, 5
@@ -562,3 +563,32 @@ def test_el_historial_guardado_coincide_con_el_estado_actual(ruta):
     assert desalineadas == 0
     assert cx.execute("PRAGMA foreign_key_check").fetchall() == []
     cx.close()
+
+
+# Trazabilidad de muestras
+
+
+def test_muestras_se_listan_con_su_estado_y_se_filtran(ruta):
+    consulta_id, muestras, _ = remito_recibido(ruta)
+    GestorLaboratorio(ruta).registrar_resultado(muestras[0], "2026-11-04 09:00", "Bioquímica", "Hto 45%")
+    gestor = GestorMuestras(ruta)
+    todas = gestor.listar()
+    assert {m["estado"] for m in todas} == {"Analizada", "Recibida"}
+    assert all(m["remito"] for m in todas)
+    assert [m["estado"] for m in gestor.listar(estado="Analizada")] == ["Analizada"]
+    assert gestor.listar("no existe") == []
+    cantidades = gestor.contar_por_estado()
+    assert list(cantidades) == ["Extraída", "Empaquetada", "En tránsito", "Recibida", "Analizada", "Rechazada"]
+    assert cantidades["Analizada"] == 1 and cantidades["Recibida"] == 1 and cantidades["Extraída"] == 0
+    assert [estado for _, estado in gestor.estados_por_consulta()[consulta_id]] == ["Analizada", "Recibida"]
+
+
+def test_trazabilidad_de_una_muestra_muestra_todo_su_historial(ruta):
+    _, muestras, _ = remito_recibido(ruta)
+    GestorLaboratorio(ruta).registrar_resultado(muestras[0], "2026-11-04 09:00", "Bioquímica", "Hto 45%")
+    datos = GestorMuestras(ruta).obtener_trazabilidad(muestras[0])
+    assert [r.estado for r in datos["muestra"].historial] == [
+        "Extraída", "Empaquetada", "En tránsito", "Recibida", "Analizada"]
+    assert datos["resultado"]["valores"] == "Hto 45%"
+    with pytest.raises(ErrorNegocio):
+        GestorMuestras(ruta).obtener_trazabilidad(9999)

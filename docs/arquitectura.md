@@ -16,7 +16,7 @@ interfaz/  → negocio/  → dao/  → SQLite
 | `modelos/` | Clases del dominio y validaciones | No acceden a la base |
 | `estados/` | Estados de muestra y remito | Definen qué transiciones son válidas |
 | `datos/` | Conexión, esquema y datos de ejemplo | `PRAGMA foreign_keys` se activa en cada conexión |
-| `reportes/` | Contenido del reporte y generación del PDF | No conoce la base |
+| `reportes/` | Contenido del reporte y su exportación a PDF, Excel o Markdown | No conoce la base |
 | `tests/` | Pruebas con pytest | Usan bases temporales, nunca `veterinaria.db` |
 
 ## Dónde agregar cada cosa
@@ -26,6 +26,7 @@ interfaz/  → negocio/  → dao/  → SQLite
 - **Una transición de estado:** en `estados/`, redefiniendo el método en el estado que la admite. Por defecto, la clase base la rechaza.
 - **Una pantalla:** una subclase de `Pantalla` en `interfaz/`, registrada en `aplicacion.py`. Si crea algo, su formulario va en un `Dialogo`, abierto con un botón de `boton_nuevo()`.
 - **Un reporte:** una consulta en `ReporteDAO`, un método en `GestorReportes` y su entrada en `NOMBRES_REPORTES`.
+- **Un formato de exportación:** una subclase de `Documento` que escriba el formato, una de `Exportador` cuyo `crear_documento()` la devuelva, y su entrada en `EXPORTADORES`. El gestor y la pantalla no cambian.
 
 ## Flujo de una operación
 
@@ -40,6 +41,7 @@ La conexión no se comparte entre operaciones porque Flet puede ejecutar los eve
 
 - **State:** `Muestra` y `Remito` heredan de `Trazable`, que guarda el estado y el historial, y delegan las operaciones en su estado actual. Un estado concreto decide la transición. `Remito` arrastra a sus muestras.
 - **DAO:** una clase por entidad principal, que hereda de `BaseDAO`.
+- **Factory Method:** exportar un reporte. `Exportador.exportar()` (en `reportes/exportadores.py`) tiene los pasos comunes a todos los formatos: crea el documento, le agrega el encabezado, las tablas y los gráficos, y lo guarda. El único paso que cambia es qué documento se crea: lo decide cada subclase (`ExportadorPDF`, `ExportadorExcel`, `ExportadorMarkdown`) redefiniendo el método fábrica `crear_documento()`. Los documentos (`reportes/documentos.py`) heredan de `Documento` y cada uno escribe su formato. El gestor elige la clase con el diccionario `EXPORTADORES` y nunca nombra un formato concreto.
 
 ## Persistir un cambio de estado
 
@@ -53,7 +55,7 @@ Los objetos cambian primero en memoria. Después, `guardar_estado()` actualiza `
 
 ## Librerías permitidas
 
-Vistas en la materia y ya usadas: `sqlite3`, `abc`, `flet`, `reportlab`, `matplotlib` y `pytest`. También están en las filminas, sin usar: `sqlalchemy`, `tkinter` y `csv`. Para cualquier otra, preguntar antes.
+Vistas en la materia y ya usadas: `sqlite3`, `abc`, `flet`, `reportlab`, `matplotlib` y `pytest`. También están en las filminas, sin usar: `sqlalchemy`, `tkinter` y `csv`. Agregada a pedido para exportar a Excel: `openpyxl`. Para cualquier otra, preguntar antes.
 
 ## Probar la interfaz sin abrir la ventana
 

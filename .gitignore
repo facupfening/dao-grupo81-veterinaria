@@ -13,7 +13,7 @@ __pycache__/
 *.db-wal
 *.db-shm
 
-# PDF generados por la aplicación
+# Reportes exportados por la aplicación (PDF, Excel y Markdown)
 reportes_generados/
 
 # Compilaciones y datos locales de Flet
