@@ -20,6 +20,8 @@ class Gestor:
         try:
             with transaccion(self._ruta) as conexion:
                 yield conexion
+        # Errores de la base, de las transiciones y de las validaciones se convierten en uno solo,
+        # así la pantalla solo necesita capturar ErrorNegocio.
         except (sqlite3.IntegrityError, TransicionInvalida, ValueError) as error:
             raise ErrorNegocio(str(error)) from error
 

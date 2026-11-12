@@ -58,7 +58,7 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Los datos de ejemplo no incluyen atenciones | Se generan con los procesos, para que los historiales queden completos. Para eso está `cargar_demo.py` |
 | La demostración carga 25 consultas que cubren todas las opciones | Así cada reporte, filtro y estado se puede mostrar sin cargar datos a mano. Los clientes y mascotas nuevos también se dan de alta con los gestores |
 | La demostración deja muestras a mitad de camino (Extraídas, Empaquetadas, En tránsito y Recibidas) | Para poder empaquetar, despachar, recibir y cargar resultados en vivo desde la interfaz. La conservadora REF-01 queda Disponible para empaquetar |
-| Se agregaron una clínica, un veterinario, un laboratorio y un transportista a los datos de ejemplo | Con tres clínicas y tres transportistas los gráficos de los reportes comparan más de dos barras |
+| Se agregaron clínicas, veterinarios, un laboratorio y un transportista a los datos de ejemplo: 5 clínicas, cada una con al menos un veterinario | Se pidió una red de 5 clínicas. Cada clínica necesita un veterinario porque la consulta toma la clínica del veterinario; la demostración tiene atenciones en las 5 |
 | Un detalle de comprobante corresponde a una consulta o a una muestra, nunca a ambas | Permite desglosar la facturación por servicio |
 
 ## Facturación
@@ -107,6 +107,7 @@ Registra lo que la consigna, la presentación o el DER no definían. Antes de ca
 | Cada estado tiene un color fijo (`COLORES_ESTADO`) y se muestra con `etiqueta_estado()` en todas las pantallas | Se reconoce la etapa de un vistazo. Los estados de remito usan el color del estado de muestra equivalente |
 | La trazabilidad (Muestras, Envíos), la historia clínica y el detalle de comprobante se abren en un `PanelLateral` a la derecha, que se cierra con la X | Se ve el detalle sin perder el listado. Flet lo permite con una fila de dos columnas, así que no hizo falta una ventana emergente |
 | En Muestras, Envíos y comprobantes, tocar la fila también abre el detalle | En pantallas angostas la columna de acciones queda fuera de la vista |
+| La tabla de Consultas tiene una columna Clínica | Se pidió ver dónde se atendió cada consulta. Sale de `consultas.clinica_id`, sin cambiar el esquema |
 | En Consultas, las muestras se muestran en grilla de hasta 3 por renglón y la fila crece en alto | La fila no se estira a lo ancho cuando una consulta tiene muchas muestras |
 | El recorrido de una muestra indica el próximo paso y en qué pantalla se hace | Responde "¿dónde está y qué falta?" sin tener que conocer el flujo |
 | Laboratorio muestra las muestras pendientes de resultado y todos los comprobantes, no solo el último | Se puede volver a consultar cualquier comprobante. La búsqueda es por número o por nombre del cliente, igual que la de clientes |

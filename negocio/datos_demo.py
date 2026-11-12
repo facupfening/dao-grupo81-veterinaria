@@ -4,7 +4,7 @@ Se cargan con los mismos gestores que usa la aplicación, de modo que los
 historiales de estado y las reglas del negocio se cumplen igual que en el uso real.
 
 Qué queda cargado:
-- 10 clientes y 13 mascotas (perros y gatos), en las 3 clínicas y con los 4 veterinarios.
+- 10 clientes y 13 mascotas (perros y gatos), en las 5 clínicas y con los 6 veterinarios.
 - Consultas de los 3 tipos (Consulta, Control, Urgencia), entre septiembre de 2025 y noviembre de 2026.
 - Turnos Atendidos, Cancelados y Reservados.
 - Vacunas al día, vencidas y faltantes, incluidas algunas no obligatorias.
@@ -24,7 +24,8 @@ from negocio.gestor_laboratorio import GestorLaboratorio
 from negocio.gestor_mascotas import GestorMascotas
 
 PERRO, GATO = 1, 2
-GOMEZ, FERREYRA, RIOS, ACOSTA = 1, 2, 3, 4  # Gómez y Ferreyra: Centro; Ríos: Norte; Acosta: Sur
+GOMEZ, FERREYRA, RIOS, ACOSTA, NAVARRO, MOLINA = 1, 2, 3, 4, 5, 6
+# Gómez y Ferreyra: Centro; Ríos: Norte; Acosta: Sur; Navarro: Oeste; Molina: Este
 HEMOGRAMA, BIOQUIMICO, URIANALISIS, COPROPARASITOLOGICO, HISTOPATOLOGIA, PCR = 1, 2, 3, 4, 5, 6
 ANTIRRABICA_PERRO, SEXTUPLE, TOS_PERRERAS, ANTIRRABICA_GATO, TRIPLE_FELINA, LEUCEMIA_FELINA = 1, 2, 3, 4, 5, 6
 REF_01, REF_02, AMB_01, CON_01 = 1, 2, 3, 4  # heladeras (2 a 8 °C), ambiente (15 a 25 °C) y freezer (-20 a -10 °C)
@@ -120,7 +121,7 @@ class CargaDemo:
                                   vacunas=[(ANTIRRABICA_PERRO, "L-2026-1"), (SEXTUPLE, "L-2026-2"),
                                            (TOS_PERRERAS, "L-2026-3")])
         self.laboratorio.emitir_comprobante(consulta, "2026-01-15 09:45")
-        consulta = self._consulta("Bruno", FERREYRA, datetime(2026, 6, 18, 17, 0), "Control", 15000, "Vacunación",
+        consulta = self._consulta("Bruno", NAVARRO, datetime(2026, 6, 18, 17, 0), "Control", 15000, "Vacunación",
                                   "Sano", "Falta la antirrábica", vacunas=[(SEXTUPLE, "L-2026-4")])
         self.laboratorio.emitir_comprobante(consulta, "2026-06-18 17:30")
         consulta = self._consulta("Nala", ACOSTA, datetime(2026, 8, 12, 12, 0), "Control", 15000, "Vacunación",
@@ -136,7 +137,7 @@ class CargaDemo:
 
     def _analisis_completos(self):
         """Muestras que llegaron bien y ya tienen resultado. Cambian el tiempo de viaje y de análisis."""
-        consulta = self._consulta("Kira", RIOS, datetime(2026, 3, 10, 10, 0), "Consulta", 22000, "Cojera",
+        consulta = self._consulta("Kira", NAVARRO, datetime(2026, 3, 10, 10, 0), "Consulta", 22000, "Cojera",
                                   "Displasia de cadera", "Antiinflamatorio y reposo")
         muestras = self._derivar(consulta, datetime(2026, 3, 10, 10, 0), [HEMOGRAMA, BIOQUIMICO], REF_02,
                                  [TRANSPORTE_EJEMPLO], "Intacto", horas_de_viaje=4)
@@ -175,7 +176,7 @@ class CargaDemo:
 
     def _muestras_rechazadas(self):
         """El precinto llegó roto: el remito y sus muestras se rechazan y no se facturan."""
-        consulta = self._consulta("Lola", ACOSTA, datetime(2026, 9, 9, 9, 30), "Consulta", 20000, "Diarrea",
+        consulta = self._consulta("Lola", MOLINA, datetime(2026, 9, 9, 9, 30), "Consulta", 20000, "Diarrea",
                                   "Parasitosis", "Antiparasitario")
         self._derivar(consulta, datetime(2026, 9, 9, 9, 30), [COPROPARASITOLOGICO], REF_02,
                       [ENVIOS_DEL_CENTRO, TRANSPORTE_EJEMPLO], "Roto", horas_de_viaje=7)
@@ -212,7 +213,7 @@ class CargaDemo:
                                   "Pérdida de peso", "A estudiar", "Dieta de recuperación")
         self._derivar(consulta, datetime(2026, 10, 28, 16, 0), [BIOQUIMICO], REF_02, [TRANSPORTE_EJEMPLO], "Intacto",
                       horas_de_viaje=2)
-        consulta = self._consulta("Michi", ACOSTA, datetime(2026, 11, 4, 11, 0), "Control", 15000,
+        consulta = self._consulta("Michi", MOLINA, datetime(2026, 11, 4, 11, 0), "Control", 15000,
                                   "Control post lipidosis", "Recuperada", "Alta")
         self._derivar(consulta, datetime(2026, 11, 4, 11, 0), [HEMOGRAMA], REF_01, [ENVIOS_DEL_CENTRO], "Intacto",
                       horas_de_viaje=3, laboratorio=DEL_SUR)

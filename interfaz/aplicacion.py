@@ -17,6 +17,7 @@ class Aplicacion:
     """Ventana principal: un menú lateral y la pantalla elegida."""
 
     def __init__(self, ruta=RUTA_DB, pagina=None):
+        # Cada sección del menú: nombre, ícono y pantalla.
         secciones = [
             ("Clientes", ft.Icons.PEOPLE, PantallaClientes(ruta)),
             ("Mascotas", ft.Icons.PETS, PantallaMascotas(ruta)),

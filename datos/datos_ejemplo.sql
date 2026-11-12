@@ -19,13 +19,18 @@ INSERT INTO vacunas (especie_id, nombre, obligatoria, intervalo_dias) VALUES
 INSERT INTO clinicas (id, nombre, direccion, telefono) VALUES
     (1, 'Clínica Centro', 'Av. Ejemplo 100, Córdoba', '351-000-0001'),
     (2, 'Clínica Norte', 'Calle Ficticia 200, Córdoba', '351-000-0002'),
-    (3, 'Clínica Sur', 'Av. Inventada 300, Córdoba', '351-000-0003');
+    (3, 'Clínica Sur', 'Av. Inventada 300, Córdoba', '351-000-0003'),
+    (4, 'Clínica Oeste', 'Calle Imaginaria 400, Córdoba', '351-000-0004'),
+    (5, 'Clínica Este', 'Av. Supuesta 500, Córdoba', '351-000-0005');
 
+-- Cada clínica tiene al menos un veterinario, porque la consulta toma la clínica del veterinario que atiende.
 INSERT INTO veterinarios (clinica_id, matricula, nombre, apellido) VALUES
     (1, 'MP-1001', 'Laura', 'Gómez'),
     (1, 'MP-1002', 'Diego', 'Ferreyra'),
     (2, 'MP-1003', 'Paula', 'Ríos'),
-    (3, 'MP-1004', 'Martín', 'Acosta');
+    (3, 'MP-1004', 'Martín', 'Acosta'),
+    (4, 'MP-1005', 'Sofía', 'Navarro'),
+    (5, 'MP-1006', 'Andrés', 'Molina');
 
 INSERT INTO clientes (id, dni, nombre, apellido, telefono, email, direccion) VALUES
     (1, '30000001', 'Ana', 'Martínez', '351-100-0001', 'ana@example.com', 'Calle Uno 111'),

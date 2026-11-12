@@ -5,8 +5,8 @@ from interfaz.aplicacion import iniciar
 
 
 def main():
-    inicializar()
-    ft.run(iniciar)
+    inicializar()  # crea la base y carga los datos de ejemplo si todavía no existen
+    ft.run(iniciar)  # abre la ventana de Flet
 
 
 if __name__ == "__main__":

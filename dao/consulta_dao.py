@@ -22,11 +22,12 @@ class ConsultaDAO(BaseDAO):
         ).fetchall()
 
     def listar_detallado(self):
-        """Consultas con el nombre de la mascota, listas para elegirlas en pantalla."""
+        """Consultas con el nombre de la mascota y de la clínica, listas para mostrarlas en pantalla."""
         return self._conexion.execute(
-            """SELECT c.*, m.nombre AS mascota FROM consultas c
+            """SELECT c.*, m.nombre AS mascota, cl.nombre AS clinica FROM consultas c
                JOIN historias_clinicas h ON h.id = c.historia_id
                JOIN mascotas m ON m.id = h.mascota_id
+               JOIN clinicas cl ON cl.id = c.clinica_id
                ORDER BY c.fecha_hora DESC, c.id DESC"""
         ).fetchall()
 

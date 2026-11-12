@@ -5,6 +5,8 @@ class ReporteDAO(BaseDAO):
     """Consultas de los reportes. Los períodos llegan como textos 'AAAA-MM-DD HH:MM'."""
 
     def atenciones_por_clinica(self, desde, hasta):
+        # En SQLite una comparación vale 1 o 0: SUM(c.tipo = 'Consulta') cuenta las consultas.
+        # Las órdenes se cuentan en una subconsulta para no multiplicar las filas del JOIN.
         return self._conexion.execute(
             """SELECT cl.nombre AS clinica,
                       COALESCE(SUM(c.tipo = 'Consulta'), 0) AS consultas,
@@ -77,6 +79,7 @@ class ReporteDAO(BaseDAO):
 
     def tiempos_de_transito(self, desde, hasta):
         """Horas desde el despacho hasta la recepción, sea aceptada o rechazada."""
+        # julianday() da la diferencia en días; por 24 queda en horas.
         return self._conexion.execute(
             """SELECT cl.nombre AS clinica, COUNT(*) AS cantidad,
                       AVG((julianday(fin.fecha_hora) - julianday(ini.fecha_hora)) * 24) AS horas

@@ -30,6 +30,7 @@ class GestorEnvios(Gestor):
             if len(set(muestra_ids)) != len(muestra_ids):
                 raise ErrorNegocio("Hay muestras repetidas en la selección")
 
+            # 1. La conservadora tiene que estar disponible y tener lugar.
             conservadora_dao = ConservadoraDAO(conexion)
             conservadora = self._exigir(conservadora_dao.obtener_por_id(conservadora_id), "La conservadora no existe")
             if conservadora["estado"] != "Disponible":
@@ -37,6 +38,7 @@ class GestorEnvios(Gestor):
             if len(muestra_ids) > conservadora["capacidad"]:
                 raise ErrorNegocio(f"La conservadora {conservadora['codigo']} admite {conservadora['capacidad']} muestras")
 
+            # 2. Cada muestra tiene que tolerar la temperatura y todas compartir clínica y laboratorio.
             muestra_dao = MuestraDAO(conexion)
             muestras = []
             destinos = set()
@@ -55,6 +57,7 @@ class GestorEnvios(Gestor):
                 raise ErrorNegocio("Las muestras de un remito deben tener la misma clínica y el mismo laboratorio")
             clinica_id, laboratorio_id = destinos.pop()
 
+            # 3. Se arma el remito en memoria (patrón State) y después se guarda con sus muestras y el precinto.
             remito_dao = RemitoDAO(conexion)
             remito = Remito(remito_dao.siguiente_numero(), clinica_id, laboratorio_id, conservadora_id,
                             fecha_hora, responsable)
@@ -81,6 +84,7 @@ class GestorEnvios(Gestor):
             self._exigir(CatalogoDAO(conexion).obtener_transportista(transportista_id), "El transportista no existe")
             remito_dao = RemitoDAO(conexion)
             remito = self._exigir(remito_dao.obtener_por_id(remito_id), "El remito no existe")
+            # El estado actual del remito decide si el evento está permitido y si cambia su estado.
             if tipo == DESPACHO:
                 remito.despachar(fecha_hora, responsable)
             else:

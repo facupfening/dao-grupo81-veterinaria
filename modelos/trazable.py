@@ -25,6 +25,7 @@ class Trazable:
         return tuple(self._historial)
 
     def cambiar_estado(self, estado_nuevo, fecha_hora, responsable, observacion=None):
+        # Primero se valida todo y recién después se cambia el estado: un error no deja el objeto a medias.
         registro = RegistroEstado(estado_nuevo.nombre, fecha_hora, responsable, observacion)
         if self._historial and fecha_hora < self._historial[-1].fecha_hora:
             raise ValueError("La fecha del cambio de estado no puede ser anterior a la del último registro")

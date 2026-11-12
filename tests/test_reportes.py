@@ -14,7 +14,7 @@ from reportes.documentos import DocumentoExcel, DocumentoMarkdown, DocumentoPDF
 from reportes.exportadores import EXPORTADORES, Exportador
 from reportes.reporte import Reporte
 
-CENTRO, NORTE, SUR = "Clínica Centro", "Clínica Norte", "Clínica Sur"
+CENTRO, ESTE, NORTE, OESTE, SUR = "Clínica Centro", "Clínica Este", "Clínica Norte", "Clínica Oeste", "Clínica Sur"
 TOBY, LUNA, SIMON = 1, 3, 4
 GOMEZ, RIOS = 1, 3
 HEMOGRAMA, BIOQUIMICO = 1, 2
@@ -72,7 +72,9 @@ def test_atenciones_cuenta_por_tipo_y_ordenes_por_clinica(ruta):
     GestorAtencion(ruta).emitir_orden(primera, 1, "2026-10-05 10:30", [(HEMOGRAMA, "2026-10-05 10:25")], "Laura")
     assert tabla_de(GestorReportes(ruta).atenciones()) == [
         [CENTRO, 2, 0, 1, 3, 2],
+        [ESTE, 0, 0, 0, 0, 0],
         [NORTE, 0, 1, 0, 1, 0],
+        [OESTE, 0, 0, 0, 0, 0],
         [SUR, 0, 0, 0, 0, 0],
     ]
 
@@ -88,7 +90,7 @@ def test_atenciones_filtra_por_periodo_incluyendo_los_extremos(ruta):
 
 def test_atenciones_sin_datos_muestra_las_clinicas_en_cero_y_sin_grafico(ruta):
     reporte = GestorReportes(ruta).atenciones()
-    assert tabla_de(reporte) == [[CENTRO, 0, 0, 0, 0, 0], [NORTE, 0, 0, 0, 0, 0], [SUR, 0, 0, 0, 0, 0]]
+    assert tabla_de(reporte) == [[clinica, 0, 0, 0, 0, 0] for clinica in (CENTRO, ESTE, NORTE, OESTE, SUR)]
     assert reporte.graficos == ()
 
 
@@ -388,7 +390,7 @@ def test_demo_cubre_todas_las_opciones(ruta):
     CargaDemo(ruta).cargar()
     assert len(GestorAtencion(ruta).listar_consultas()) == 25
     assert valores_distintos(ruta, "SELECT tipo FROM consultas") == {"Consulta", "Control", "Urgencia"}
-    assert valores_distintos(ruta, "SELECT clinica_id FROM consultas") == {1, 2, 3}
+    assert valores_distintos(ruta, "SELECT clinica_id FROM consultas") == {1, 2, 3, 4, 5}
     assert valores_distintos(ruta, "SELECT estado FROM turnos") == {"Reservado", "Atendido", "Cancelado"}
     assert valores_distintos(ruta, "SELECT estado_actual FROM muestras") == {
         "Extraída", "Empaquetada", "En tránsito", "Recibida", "Analizada", "Rechazada"}

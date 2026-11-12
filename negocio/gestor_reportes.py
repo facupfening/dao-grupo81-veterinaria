@@ -36,6 +36,7 @@ def _horas(valor):
 class GestorReportes(Gestor):
     def generar(self, tipo, desde=None, hasta=None):
         """Arma el reporte pedido. Las fechas AAAA-MM-DD son opcionales e incluyen ambos extremos."""
+        # Tipo de reporte -> método que lo arma.
         generadores = {
             ATENCIONES: self.atenciones,
             RECHAZOS: self.rechazos,
@@ -190,6 +191,7 @@ class GestorReportes(Gestor):
             validar_fecha_de_periodo(hasta, "Hasta")
         if desde and hasta and desde > hasta:
             raise ErrorNegocio("La fecha Desde no puede ser posterior a la fecha Hasta")
+        # Sin fecha se usa un extremo que abarca todo; con fecha se incluye el día completo.
         inicio = f"{desde} 00:00" if desde else "0000-01-01 00:00"
         fin = f"{hasta} 23:59" if hasta else "9999-12-31 23:59"
         periodo = f"{desde or 'el inicio'} a {hasta or 'la fecha actual'}"

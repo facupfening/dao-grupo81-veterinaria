@@ -67,6 +67,7 @@ class GestorAtencion(Gestor):
             )
             if turno_id is not None:
                 self._atender_turno(conexion, turno_id, mascota_id)
+            # La clínica de la consulta es la del veterinario que atiende.
             consulta_id = ConsultaDAO(conexion).crear(
                 historia["id"], veterinario_id, veterinario["clinica_id"], turno_id, fecha_hora, tipo,
                 motivo, diagnostico, tratamiento, precio,
@@ -139,6 +140,7 @@ class GestorAtencion(Gestor):
         pendientes = []
         vencidas = []
         for vacuna in VacunaDAO(conexion).listar_obligatorias_con_ultima_aplicacion(mascota.especie_id, historia_id):
+            # Pendiente: nunca se aplicó. Vencida: la fecha de la próxima dosis ya pasó.
             if vacuna["aplicaciones"] == 0:
                 pendientes.append(vacuna["nombre"])
             elif vacuna["fecha_proxima"] and vacuna["fecha_proxima"] < fecha_hora:

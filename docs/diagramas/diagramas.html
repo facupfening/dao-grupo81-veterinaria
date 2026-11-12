@@ -23,7 +23,7 @@
 <body>
 <header>
   <h1>Veterinaria, grupo 81: diagramas</h1>
-  <nav><a href="#der">DER</a><a href="#clases_general">Clases: general</a><a href="#clases_capas">Capas</a><a href="#patron_state">State</a><a href="#estados_muestra">Estados de la muestra</a><a href="#estados_remito">Estados del remito</a><a href="#patron_dao">DAO</a><a href="#patron_factory_method">Factory Method</a></nav>
+  <nav><a href="#der">DER</a><a href="#clases_general">Clases: general</a><a href="#clases_capas">Capas</a><a href="#patron_state">State</a><a href="#estados_muestra">Estados de la muestra</a><a href="#estados_remito">Estados del remito</a><a href="#maquina_muestra">Máquina de estados: muestra</a><a href="#maquina_remito">Máquina de estados: remito</a><a href="#patron_dao">DAO</a><a href="#patron_factory_method">Factory Method</a></nav>
 </header>
 
 <section id="der">
@@ -648,6 +648,32 @@ stateDiagram-v2
     Recibido --&gt; [*]
     Rechazado --&gt; [*]
   </pre>
+</section>
+
+<section id="maquina_muestra">
+  <h2>Máquina de estados UML: muestra</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Cada transición indica <code>evento() [condición] / acción</code>. El círculo negro es el estado inicial y el círculo con borde, el final.</li>
+      <li>Una operación que el estado actual no admite lanza <code>TransicionInvalida</code>, y cada cambio agrega un registro al historial inmutable.</li>
+    </ul>
+  </div>
+  <a href="maquina_estados_muestra.svg" download><button>Descargar SVG</button></a>
+  <a href="maquina_estados_muestra.png" download><button>Descargar PNG</button></a>
+  <div class="lienzo"><img src="maquina_estados_muestra.svg" alt="Máquina de estados de la muestra" style="max-width:100%"></div>
+</section>
+
+<section id="maquina_remito">
+  <h2>Máquina de estados UML: remito biológico</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Las flechas que vuelven al mismo estado son transiciones sin cambio de estado: agregar muestras mientras está Emitido, y registrar más tramos mientras está En tránsito.</li>
+      <li>En la recepción, el precinto decide el estado final del remito y de todas sus muestras.</li>
+    </ul>
+  </div>
+  <a href="maquina_estados_remito.svg" download><button>Descargar SVG</button></a>
+  <a href="maquina_estados_remito.png" download><button>Descargar PNG</button></a>
+  <div class="lienzo"><img src="maquina_estados_remito.svg" alt="Máquina de estados del remito" style="max-width:100%"></div>
 </section>
 
 <section id="patron_dao">

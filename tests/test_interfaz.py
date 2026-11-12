@@ -284,8 +284,17 @@ def test_la_seccion_muestras_muestra_estados_y_recorrido(app):
     assert len(muestras.detalle.controls) == 3 + 4  # encabezado + 4 cambios de estado
 
     consultas = abrir(app, CONSULTAS)
-    grilla = consultas.tabla.rows[0].cells[5].content.content
+    grilla = consultas.tabla.rows[0].cells[6].content.content
     assert [len(renglon.controls) for renglon in grilla.controls] == [2]
+
+
+def test_la_tabla_de_consultas_muestra_la_clinica(app):
+    consultas = abrir(app, CONSULTAS)
+    registrar_consulta(consultas)
+    encabezados = [columna.label.value for columna in consultas.tabla.columns]
+    assert encabezados.index("Clínica") == 2
+    # Toby lo atiende Gómez, de la Clínica Centro: la consulta toma la clínica del veterinario.
+    assert consultas.tabla.rows[0].cells[2].content.value == "Clínica Centro"
 
 
 def test_las_muestras_de_una_consulta_se_ven_de_a_3_por_renglon(app):

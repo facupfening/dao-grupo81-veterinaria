@@ -39,6 +39,7 @@ class Emitido(EstadoRemito):
         return "Emitido"
 
     def agregar_muestra(self, remito, muestra, fecha_hora, responsable, observacion=None):
+        # Si la muestra no está Extraída, su propio estado rechaza el empaquetado y no se agrega.
         muestra.empaquetar(fecha_hora, responsable, observacion)
         remito.incorporar_muestra(muestra)
 
@@ -54,6 +55,7 @@ class Despachado(EstadoRemito):
         return "Despachado"
 
     def registrar_tramo(self, remito, fecha_hora, responsable, observacion=None):
+        # Se verifican todas las muestras antes de cambiar nada; después pasan a En tránsito junto con el remito.
         remito.verificar_muestras("Empaquetada", fecha_hora)
         remito.cambiar_estado(EnTransito(), fecha_hora, responsable, observacion)
         for muestra in remito.muestras:
@@ -73,6 +75,7 @@ class EnTransito(EstadoRemito):
         if estado_precinto not in (PRECINTO_INTACTO, PRECINTO_ROTO):
             raise ValueError(f"Estado de precinto inválido: {estado_precinto}")
         remito.verificar_muestras("En tránsito", fecha_hora)
+        # El precinto decide el destino: intacto se recibe, roto se rechaza todo el remito.
         if estado_precinto == PRECINTO_INTACTO:
             remito.cambiar_estado(Recibido(), fecha_hora, responsable, observacion)
             for muestra in remito.muestras:
@@ -95,6 +98,7 @@ class Rechazado(EstadoRemito):
         return "Rechazado"
 
 
+# Nombre guardado en la base -> clase del estado. Se usa al recuperar un remito de la base.
 ESTADOS_REMITO = {
     "Emitido": Emitido,
     "Despachado": Despachado,

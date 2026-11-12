@@ -35,6 +35,7 @@ class Remito(Trazable):
         """Con el precinto intacto el remito se recibe; con el precinto roto se rechaza."""
         self._estado.registrar_recepcion(self, estado_precinto, fecha_hora, responsable, observacion)
 
+    # La llama el estado Emitido, una vez que la muestra quedó Empaquetada.
     def incorporar_muestra(self, muestra):
         self._muestras.append(muestra)
 

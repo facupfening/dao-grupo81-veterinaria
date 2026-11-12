@@ -47,7 +47,7 @@ class PantallaConsultas(Pantalla):
         self.fecha_extraccion = campo_fecha("Extracción *")
         self.lista_muestras = ft.Column(spacing=0)
 
-        self.tabla = tabla("Fecha", "Mascota", "Tipo", "Diagnóstico", "Precio", "Muestras", "Acciones")
+        self.tabla = tabla("Fecha", "Mascota", "Clínica", "Tipo", "Diagnóstico", "Precio", "Muestras", "Acciones")
         # Sin límite de alto: cada fila crece según los renglones de muestras que tenga.
         self.tabla.data_row_max_height = float("inf")
         self.dialogo_consulta = Dialogo(
@@ -217,7 +217,7 @@ class PantallaConsultas(Pantalla):
                                  for c in consultas]
         self.tabla.rows = [
             fila_de_tabla(
-                [c["fecha_hora"], c["mascota"], c["tipo"], c["diagnostico"], f"$ {c['precio']:.2f}",
+                [c["fecha_hora"], c["mascota"], c["clinica"], c["tipo"], c["diagnostico"], f"$ {c['precio']:.2f}",
                  self._etiquetas_de_muestras(muestras.get(c["id"], []))],
                 [ft.IconButton(ft.Icons.SCIENCE, tooltip="Emitir orden de derivación", icon_color=ft.Colors.TEAL_700,
                                on_click=lambda e, id=c["id"]: self.nueva_orden(e, id))],

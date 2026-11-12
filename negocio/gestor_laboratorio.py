@@ -34,6 +34,7 @@ class GestorLaboratorio(Gestor):
             consulta_dao = ConsultaDAO(conexion)
             consulta = self._exigir(consulta_dao.obtener_por_id(consulta_id), "La consulta no existe")
             dao = ComprobanteDAO(conexion)
+            # Cada línea es (consulta_id, muestra_id, descripción, precio): uno de los dos ids siempre es None.
             lineas = []
             if not dao.consulta_facturada(consulta_id):
                 lineas.append((consulta_id, None, f"{consulta['tipo']} del {consulta['fecha_hora']}", consulta["precio"]))

@@ -85,6 +85,7 @@ class PantallaClientes(Pantalla):
         vaciar(self.dni, self.nombre, self.apellido, self.telefono, self.email, self.direccion)
 
     def _mostrar(self, clientes):
+        # c=c fija el cliente de cada fila: sin eso, todos los botones usarían el último cliente.
         self.tabla.rows = [
             fila_de_tabla(
                 [c.dni, c.apellido, c.nombre, c.telefono, c.email, c.direccion],

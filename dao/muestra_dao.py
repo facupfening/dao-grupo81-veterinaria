@@ -48,6 +48,7 @@ class MuestraDAO(BaseDAO):
                JOIN mascotas ma ON ma.id = h.mascota_id
                LEFT JOIN remitos_biologicos r ON r.id = m.remito_id
                WHERE (m.codigo LIKE ? OR ma.nombre LIKE ?)
+                 -- Sin estado elegido el parámetro es NULL y esta condición no filtra.
                  AND (? IS NULL OR m.estado_actual = ?)
                ORDER BY m.id DESC""",
             (texto, texto, estado, estado),
@@ -77,6 +78,7 @@ class MuestraDAO(BaseDAO):
                JOIN ordenes_derivacion o ON o.id = m.orden_id
                JOIN consultas c ON c.id = o.consulta_id
                WHERE m.estado_actual = 'Extraída'
+               -- 'Urgente' va después de 'Normal' en el alfabeto: con DESC las urgentes salen primero.
                ORDER BY o.prioridad DESC, m.id"""
         ).fetchall()
 

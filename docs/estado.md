@@ -1,23 +1,24 @@
 # Estado del proyecto
 
-Última actualización: 2026-11-11. Al modificar el proyecto, actualizar este archivo.
+Última actualización: 2026-11-12. Al modificar el proyecto, actualizar este archivo.
 
 ## Hecho
 
 | Parte | Estado |
 | --- | --- |
 | Base de datos | 25 tablas del DER, `CHECK` y 6 triggers |
-| Datos de ejemplo | Catálogos (3 clínicas, 4 veterinarios, 2 laboratorios, 3 transportistas), 3 clientes y 4 mascotas, cargados automáticamente |
+| Datos de ejemplo | Catálogos (5 clínicas, 6 veterinarios, 2 laboratorios, 3 transportistas), 3 clientes y 4 mascotas, cargados automáticamente |
 | Patrón State | Muestra y remito, con historial y paso de estado en conjunto |
 | DAO | Una clase por entidad principal |
 | Procesos 1 a 7 | Implementados en `negocio/` |
-| Interfaz de Flet | 9 secciones: Clientes, Mascotas, Turnos, Consultas, Empaquetado, Envíos, Laboratorio, Muestras y Reportes. Colores en verde azulado, listados en tarjetas y altas en ventanas emergentes que se abren con botones "Nuevo …". Las fechas se eligen con calendario y las horas con reloj. DNI, teléfono, precio, peso y temperaturas no dejan tipear letras. Los campos obligatorios llevan `*`. El calendario de Hasta (Reportes) y de Fin (Turnos) no ofrece días anteriores a Desde e Inicio. Laboratorio lista las muestras pendientes y todos los comprobantes, con búsqueda por número o cliente y su detalle. Cada ventana se abre vacía; las vacunas y muestras agregadas se ven en lista y se pueden quitar |
+| Interfaz de Flet | 9 secciones: Clientes, Mascotas, Turnos, Consultas, Empaquetado, Envíos, Laboratorio, Muestras y Reportes. Colores en verde azulado, listados en tarjetas y altas en ventanas emergentes que se abren con botones "Nuevo …". Las fechas se eligen con calendario y las horas con reloj. La tabla de Consultas muestra la clínica de cada atención. DNI, teléfono, precio, peso y temperaturas no dejan tipear letras. Los campos obligatorios llevan `*`. El calendario de Hasta (Reportes) y de Fin (Turnos) no ofrece días anteriores a Desde e Inicio. Laboratorio lista las muestras pendientes y todos los comprobantes, con búsqueda por número o cliente y su detalle. Cada ventana se abre vacía; las vacunas y muestras agregadas se ven en lista y se pueden quitar |
 | Trazabilidad de muestras | Sección Muestras: cantidad por estado, filtro, búsqueda y recorrido completo de cada muestra con su próximo paso. El estado se ve en color también en Consultas (grilla de hasta 3 por renglón), Envíos y la historia clínica. La trazabilidad, la historia clínica y el detalle de comprobante se abren en un panel a la derecha del listado, tocando el ícono o la fila |
 | Reportes | Los 5 prometidos, en pantalla y exportados a PDF, Excel o Markdown con sus tablas y gráficos |
 | Patrón Factory Method | Exportación de reportes: un exportador y un documento por formato |
-| Datos de demostración | `cargar_demo.py`, a pedido: 25 consultas, 10 clientes y 13 mascotas. Cubren todos los estados de muestras, remitos, turnos y conservadoras, los 3 tipos de consulta, los 6 análisis, las 3 clínicas, prioridad Normal y Urgente, precintos intactos y rotos, y vacunas al día, vencidas y faltantes. Un test controla que no falte ninguna opción |
-| Diagramas | En `docs/diagramas/`: DER (controlado contra la base: tablas, columnas y claves foráneas), clases general, capas, State (clases y transiciones de muestra y remito), DAO y Factory Method. Cada uno en `diagramas.html` y como `.png` y `.svg` |
-| Tests | 284 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.11 y 3.14) |
+| Datos de demostración | `cargar_demo.py`, a pedido: 25 consultas, 10 clientes y 13 mascotas. Cubren todos los estados de muestras, remitos, turnos y conservadoras, los 3 tipos de consulta, los 6 análisis, las 5 clínicas, prioridad Normal y Urgente, precintos intactos y rotos, y vacunas al día, vencidas y faltantes. Un test controla que no falte ninguna opción |
+| Diagramas | En `docs/diagramas/`: DER (controlado contra la base: tablas, columnas y claves foráneas), clases general, capas, State (clases y transiciones de muestra y remito), DAO, Factory Method y las máquinas de estado UML de muestra y remito (con evento, condición y acción en cada transición). Cada uno en `diagramas.html` y como `.png` y `.svg` |
+| Comentarios en el código | Breves, en los puntos menos obvios: SQL de reportes, pasos del empaquetado, State y conversión de errores |
+| Tests | 285 con pytest, todos pasan en un entorno limpio instalado desde `requirements.txt` (Python 3.11 y 3.14) |
 
 ## Cómo se verificó
 

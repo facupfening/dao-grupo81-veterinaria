@@ -33,6 +33,9 @@ class EstadoMuestra(ABC):
         raise TransicionInvalida(f"No se puede {accion} una muestra en estado {self.nombre}")
 
 
+# Estados concretos: cada uno redefine solo las operaciones que admite.
+
+
 class Extraida(EstadoMuestra):
     @property
     def nombre(self):
@@ -84,6 +87,7 @@ class Rechazada(EstadoMuestra):
         return "Rechazada"
 
 
+# Nombre guardado en la base -> clase del estado. Se usa al recuperar una muestra de la base.
 ESTADOS_MUESTRA = {
     "Extraída": Extraida,
     "Empaquetada": Empaquetada,
