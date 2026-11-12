@@ -10,6 +10,7 @@ Si sos un agente o alguien nuevo en el proyecto, leé estos archivos antes de ca
 | [estado.md](estado.md) | Qué está hecho, qué se probó y qué falta |
 | [decisiones.md](decisiones.md) | Decisiones tomadas y sus motivos |
 | [arquitectura.md](arquitectura.md) | Capas, patrones y dónde va cada cosa |
+| [diagramas/diagramas.html](diagramas/diagramas.html) | DER y diagramas de clases. Se abre con doble clic en el navegador |
 
 ## Reglas para trabajar en el proyecto
 

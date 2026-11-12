@@ -23,6 +23,20 @@ class ComprobanteDAO(BaseDAO):
     def obtener_por_id(self, id):
         return self._conexion.execute("SELECT * FROM comprobantes WHERE id = ?", (id,)).fetchone()
 
+    def listar(self, busqueda=""):
+        """Comprobantes con el cliente y la clínica, filtrados por número o por nombre del cliente."""
+        texto = f"%{busqueda}%"
+        return self._conexion.execute(
+            """SELECT c.id, c.numero, c.fecha, c.total,
+                      cl.apellido || ', ' || cl.nombre AS cliente, cli.nombre AS clinica
+               FROM comprobantes c
+               JOIN clientes cl ON cl.id = c.cliente_id
+               JOIN clinicas cli ON cli.id = c.clinica_id
+               WHERE c.numero LIKE ? OR cl.apellido LIKE ? OR cl.nombre LIKE ?
+               ORDER BY c.fecha DESC, c.id DESC""",
+            (texto, texto, texto),
+        ).fetchall()
+
     def listar_detalles(self, comprobante_id):
         return self._conexion.execute(
             "SELECT * FROM detalles_comprobante WHERE comprobante_id = ? ORDER BY id", (comprobante_id,)

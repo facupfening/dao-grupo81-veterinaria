@@ -49,6 +49,10 @@ class GestorLaboratorio(Gestor):
                 dao.agregar_detalle(comprobante_id, detalle_consulta, detalle_muestra, descripcion, 1, precio)
             return {"comprobante_id": comprobante_id, "numero": numero, "total": total}
 
+    def listar_comprobantes(self, busqueda=""):
+        with self._transaccion() as conexion:
+            return ComprobanteDAO(conexion).listar((busqueda or "").strip())
+
     def obtener_comprobante(self, comprobante_id):
         with self._transaccion() as conexion:
             dao = ComprobanteDAO(conexion)

@@ -1,11 +1,13 @@
 import flet as ft
 
-from interfaz.pantalla import (Pantalla, ahora, campo, fila_de_tabla, formulario, id_elegido, lista, numero, opcion,
-                               subtitulo, tabla, texto_o_none)
+from interfaz.pantalla import (NUMERO_DECIMAL, Dialogo, Pantalla, ahora, boton_nuevo, campo, campo_fecha, fila_de_tabla, formulario, id_elegido,
+                               lista, numero, opcion, subtitulo, tabla, tarjeta, texto_o_none, vaciar)
 from negocio.gestor_atencion import GestorAtencion
 from negocio.gestor_catalogos import GestorCatalogos
 from negocio.gestor_clientes import GestorClientes
 from negocio.gestor_mascotas import GestorMascotas
+
+SIN_HISTORIA = "Tocá el ícono de historia clínica de una mascota para verla acá."
 
 
 class PantallaMascotas(Pantalla):
@@ -18,28 +20,31 @@ class PantallaMascotas(Pantalla):
         self.catalogos = GestorCatalogos(ruta)
         self.atencion = GestorAtencion(ruta)
         self.id_en_edicion = None
-        self.cliente = lista("Responsable")
-        self.especie = lista("Especie", ancho=180)
-        self.nombre = campo("Nombre")
+        self.cliente = lista("Responsable *")
+        self.especie = lista("Especie *", ancho=180)
+        self.nombre = campo("Nombre *")
         self.raza = campo("Raza")
         self.sexo = lista("Sexo", [opcion("Macho", "Macho"), opcion("Hembra", "Hembra")], ancho=150)
-        self.fecha_nacimiento = campo("Nacimiento (AAAA-MM-DD)", ancho=270)
-        self.peso = campo("Peso (kg)", ancho=120)
+        self.fecha_nacimiento = campo_fecha("Nacimiento", con_hora=False, opcional=True)
+        self.peso = campo("Peso (kg)", ancho=120, input_filter=NUMERO_DECIMAL)
         self.antecedentes = campo("Antecedentes", ancho=480)
         self.tabla = tabla("Nombre", "Especie", "Raza", "Responsable", "Acciones")
-        self.detalle = ft.Column(spacing=4)
+        self.detalle = ft.Column(spacing=4, controls=[ft.Text(SIN_HISTORIA)])
+        self.dialogo = Dialogo(
+            "Nueva mascota",
+            [formulario(self.cliente, self.especie, self.nombre, self.raza, self.sexo, self.fecha_nacimiento,
+                        self.peso, self.antecedentes)],
+            self.guardar,
+        )
 
     def controles(self):
         return [
-            formulario(self.cliente, self.especie, self.nombre, self.raza, self.sexo, self.fecha_nacimiento,
-                       self.peso, self.antecedentes),
-            ft.Row(controls=[
-                ft.Button("Guardar", on_click=self.guardar),
-                ft.OutlinedButton("Limpiar", on_click=self.limpiar),
-            ]),
-            subtitulo("Listado"),
-            ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
-            self.detalle,
+            ft.Row(controls=[boton_nuevo("Nueva mascota", self.nuevo)]),
+            tarjeta(
+                subtitulo("Listado"),
+                ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
+            ),
+            tarjeta(self.detalle),
         ]
 
     def refrescar(self):
@@ -49,15 +54,20 @@ class PantallaMascotas(Pantalla):
             fila_de_tabla(
                 [m["nombre"], m["especie"], m["raza"], m["responsable"]],
                 [
-                    ft.IconButton(ft.Icons.DESCRIPTION, tooltip="Ver historia clínica",
+                    ft.IconButton(ft.Icons.DESCRIPTION, tooltip="Ver historia clínica", icon_color=ft.Colors.TEAL_700,
                                   on_click=lambda e, id=m["id"]: self.ver_historia(id)),
-                    ft.IconButton(ft.Icons.EDIT, tooltip="Editar", on_click=lambda e, id=m["id"]: self.editar(id)),
-                    ft.IconButton(ft.Icons.DELETE, tooltip="Dar de baja",
+                    ft.IconButton(ft.Icons.EDIT, tooltip="Editar", icon_color=ft.Colors.BLUE_700,
+                                  on_click=lambda e, id=m["id"]: self.editar(id)),
+                    ft.IconButton(ft.Icons.DELETE, tooltip="Dar de baja", icon_color=ft.Colors.RED_700,
                                   on_click=lambda e, id=m["id"]: self.borrar(id)),
                 ],
             )
             for m in self.gestor.listar_detallado()
         ]
+
+    def nuevo(self, e):
+        self._vaciar()
+        self._abrir_dialogo(self.dialogo, "Nueva mascota")
 
     def guardar(self, e):
         self._intentar(self._guardar)
@@ -79,12 +89,9 @@ class PantallaMascotas(Pantalla):
             self.gestor.alta(cliente_id, especie_id, self.nombre.value, ahora(),
                              antecedentes=texto_o_none(self.antecedentes), **datos)
             self._informar("Mascota registrada y historia clínica abierta.")
+        self._cerrar_dialogo()
         self._vaciar()
         self.refrescar()
-
-    def limpiar(self, e):
-        self._vaciar()
-        self.mensaje.value = ""
 
     def editar(self, id):
         historia = self.gestor.obtener_historia(id)["historia"]
@@ -98,14 +105,14 @@ class PantallaMascotas(Pantalla):
         self.fecha_nacimiento.value = mascota.fecha_nacimiento or ""
         self.peso.value = "" if mascota.peso_kg is None else str(mascota.peso_kg)
         self.antecedentes.value = historia["antecedentes"] or ""
-        self.mensaje.value = ""
+        self._abrir_dialogo(self.dialogo, f"Editar mascota {mascota.nombre}")
 
     def borrar(self, id):
         self._intentar(lambda: self._borrar(id))
 
     def _borrar(self, id):
         self.gestor.baja(id)
-        self.detalle.controls = []
+        self.detalle.controls = [ft.Text(SIN_HISTORIA)]
         self._informar("Mascota dada de baja.")
         self.refrescar()
 
@@ -140,7 +147,5 @@ class PantallaMascotas(Pantalla):
 
     def _vaciar(self):
         self.id_en_edicion = None
-        for control in (self.nombre, self.raza, self.fecha_nacimiento, self.peso, self.antecedentes):
-            control.value = ""
-        for control in (self.cliente, self.especie, self.sexo):
-            control.value = None
+        vaciar(self.cliente, self.especie, self.nombre, self.raza, self.sexo, self.fecha_nacimiento, self.peso,
+               self.antecedentes)

@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagramas Veterinaria</title>
+<style>
+  :root { --fondo: #ffffff; --texto: #1f2328; --borde: #d0d7de; --suave: #f6f8fa; --acento: #1F4E79; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); }
+  header { padding: 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--fondo); z-index: 1; }
+  header h1 { margin: 0 0 8px; font-size: 20px; }
+  nav a { margin-right: 16px; color: var(--acento); }
+  section { padding: 16px; border-bottom: 1px solid var(--borde); }
+  h2 { margin: 0 0 8px; font-size: 18px; }
+  .ayuda { background: var(--suave); border: 1px solid var(--borde); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 14px; }
+  .ayuda li { margin: 2px 0; }
+  .lienzo { overflow: auto; border: 1px solid var(--borde); border-radius: 6px; padding: 8px; }
+  .lienzo svg { max-width: none !important; }
+  button { margin: 0 8px 8px 0; padding: 6px 12px; border: 1px solid var(--acento); background: var(--fondo); color: var(--acento); border-radius: 6px; cursor: pointer; }
+  pre.fuente { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Veterinaria, grupo 81: diagramas</h1>
+  <nav><a href="#der">DER</a><a href="#dominio">Clases: dominio y State</a><a href="#capas">Clases: capas</a></nav>
+</header>
+
+<section id="der">
+  <h2>DER (25 tablas, sacado de datos/esquema.sql)</h2>
+  <div class="ayuda">
+    <ul>
+      <li><b>PK</b> clave primaria, <b>FK</b> clave foránea, <b>UK</b> valor único.</li>
+      <li>Patas de gallo: <code>||</code> exactamente uno, <code>o|</code> cero o uno, <code>o{</code> cero o muchos, <code>|{</code> uno o muchos.</li>
+      <li>Tres bloques: atención clínica (clientes → mascotas → consultas), derivación (órdenes → muestras → remitos) y facturación (comprobantes → detalles).</li>
+    </ul>
+  </div>
+  <button data-descargar="der" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="der" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-der"></div>
+  <pre class="fuente" id="fuente-der">
+erDiagram
+    %% DER armado a partir de datos/esquema.sql (25 tablas).
+    %% Notación pata de gallo: || uno, o| cero o uno, o{ cero o muchos, |{ uno o muchos.
+
+    %% ---------- Atención clínica ----------
+    clientes ||--o{ mascotas : "es responsable de"
+    especies ||--o{ mascotas : clasifica
+    especies ||--o{ vacunas : "tiene"
+    mascotas ||--o| historias_clinicas : tiene
+    clinicas ||--o{ veterinarios : emplea
+    mascotas ||--o{ turnos : reserva
+    veterinarios ||--o{ turnos : atiende
+    historias_clinicas ||--o{ consultas : registra
+    veterinarios ||--o{ consultas : realiza
+    clinicas ||--o{ consultas : "se atiende en"
+    turnos |o--o| consultas : origina
+    consultas ||--o{ aplicaciones_vacuna : aplica
+    vacunas ||--o{ aplicaciones_vacuna : "se aplica en"
+
+    %% ---------- Derivación y trazabilidad ----------
+    consultas ||--o{ ordenes_derivacion : emite
+    laboratorios ||--o{ ordenes_derivacion : recibe
+    ordenes_derivacion ||--|{ muestras : incluye
+    tipos_analisis ||--o{ muestras : "se pide para"
+    remitos_biologicos |o--o{ muestras : transporta
+    clinicas ||--o{ remitos_biologicos : envia
+    laboratorios ||--o{ remitos_biologicos : "es destino de"
+    conservadoras ||--o{ remitos_biologicos : contiene
+    muestras ||--|{ historial_estados_muestra : "historial"
+    remitos_biologicos ||--|{ historial_estados_remito : "historial"
+    remitos_biologicos ||--o| precintos : "lleva"
+    remitos_biologicos ||--o{ eventos_envio : registra
+    transportistas ||--o{ eventos_envio : realiza
+    remitos_biologicos ||--o| recepciones : "se recibe en"
+    muestras ||--o| resultados : produce
+
+    %% ---------- Facturación ----------
+    clientes ||--o{ comprobantes : paga
+    clinicas ||--o{ comprobantes : emite
+    comprobantes ||--|{ detalles_comprobante : contiene
+    consultas |o--o{ detalles_comprobante : "se factura en"
+    muestras |o--o{ detalles_comprobante : "se factura en"
+
+    especies {
+        int id PK
+        text nombre UK
+    }
+    clientes {
+        int id PK
+        text dni UK
+        text nombre
+        text apellido
+        text telefono
+        text email
+        text direccion
+    }
+    clinicas {
+        int id PK
+        text nombre
+        text direccion
+        text telefono
+    }
+    veterinarios {
+        int id PK
+        int clinica_id FK
+        text matricula UK
+        text nombre
+        text apellido
+    }
+    mascotas {
+        int id PK
+        int cliente_id FK
+        int especie_id FK
+        text nombre
+        text raza
+        text sexo
+        text fecha_nacimiento
+        real peso_kg
+    }
+    historias_clinicas {
+        int id PK
+        int mascota_id FK, UK
+        text fecha_apertura
+        text antecedentes
+    }
+    vacunas {
+        int id PK
+        int especie_id FK
+        text nombre
+        int obligatoria "0 o 1"
+        int intervalo_dias
+    }
+    turnos {
+        int id PK
+        int mascota_id FK
+        int veterinario_id FK
+        text inicio
+        text fin
+        text estado "Reservado, Atendido, Cancelado"
+    }
+    consultas {
+        int id PK
+        int historia_id FK
+        int veterinario_id FK
+        int clinica_id FK
+        int turno_id FK, UK "opcional"
+        text fecha_hora
+        text tipo "Consulta, Control, Urgencia"
+        text motivo
+        text diagnostico
+        text tratamiento
+        real precio
+    }
+    aplicaciones_vacuna {
+        int id PK
+        int consulta_id FK
+        int vacuna_id FK
+        text lote
+        text fecha_aplicacion
+        text fecha_proxima
+    }
+    laboratorios {
+        int id PK
+        text nombre
+        text direccion
+    }
+    tipos_analisis {
+        int id PK
+        text nombre UK
+        text tipo_muestra
+        real temp_min
+        real temp_max
+        real precio
+    }
+    ordenes_derivacion {
+        int id PK
+        int consulta_id FK
+        int laboratorio_id FK
+        text fecha_emision
+        text prioridad "Normal, Urgente"
+        text observaciones
+    }
+    conservadoras {
+        int id PK
+        text codigo UK
+        int capacidad
+        real temp_min
+        real temp_max
+        text estado "Disponible, En uso, Fuera de servicio"
+    }
+    remitos_biologicos {
+        int id PK
+        text numero UK
+        int clinica_id FK
+        int laboratorio_id FK
+        int conservadora_id FK
+        text fecha_emision
+        text estado_actual "patron State"
+    }
+    muestras {
+        int id PK
+        int orden_id FK
+        int tipo_analisis_id FK
+        int remito_id FK "opcional"
+        text codigo UK
+        text fecha_extraccion
+        text estado_actual "patron State"
+    }
+    historial_estados_muestra {
+        int id PK
+        int muestra_id FK
+        text estado
+        text fecha_hora
+        text responsable
+        text observacion
+    }
+    historial_estados_remito {
+        int id PK
+        int remito_id FK
+        text estado
+        text fecha_hora
+        text responsable
+        text observacion
+    }
+    precintos {
+        int id PK
+        int remito_id FK, UK
+        text numero UK
+        text fecha_colocacion
+        text colocado_por
+    }
+    transportistas {
+        int id PK
+        text nombre
+        text cuit UK
+        text telefono
+    }
+    eventos_envio {
+        int id PK
+        int remito_id FK
+        int transportista_id FK
+        text tipo "Despacho, Traspaso, Arribo"
+        text fecha_hora
+        text ubicacion
+        real temperatura
+        text responsable
+    }
+    recepciones {
+        int id PK
+        int remito_id FK, UK
+        text fecha_hora
+        text recibido_por
+        text estado_precinto "Intacto, Roto"
+        real temp_llegada
+        text observaciones
+    }
+    resultados {
+        int id PK
+        int muestra_id FK, UK
+        text fecha_hora
+        text profesional
+        text valores
+        text conclusion
+    }
+    comprobantes {
+        int id PK
+        text numero UK
+        int cliente_id FK
+        int clinica_id FK
+        text fecha
+        real total
+    }
+    detalles_comprobante {
+        int id PK
+        int comprobante_id FK
+        int consulta_id FK "o consulta"
+        int muestra_id FK "o muestra"
+        text descripcion
+        int cantidad
+        real precio_unitario
+    }
+  </pre>
+</section>
+
+<section id="dominio">
+  <h2>Clases: dominio y patrón State (modelos/ y estados/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Flecha con triángulo vacío: herencia. <code>Muestra</code> y <code>Remito</code> heredan de <code>Trazable</code>.</li>
+      <li>Rombo lleno: composición, porque el historial pertenece al objeto. Rombo vacío: agregación, porque el remito agrupa muestras que existen por su cuenta.</li>
+      <li>Flecha simple: el objeto conoce su estado actual. Cada estado concreto redefine solo las transiciones que permite.</li>
+    </ul>
+  </div>
+  <button data-descargar="dominio" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="dominio" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-dominio"></div>
+  <pre class="fuente" id="fuente-dominio">
+classDiagram
+    %% Diagrama de clases del dominio y del patrón State (carpetas modelos/ y estados/).
+    direction TB
+
+    class Cliente {
+        +id
+        +dni
+        +nombre
+        +apellido
+        +telefono
+        +email
+        +direccion
+    }
+    class Mascota {
+        +id
+        +cliente_id
+        +especie_id
+        +nombre
+        +raza
+        +sexo
+        +fecha_nacimiento
+        +peso_kg
+    }
+    Cliente "1" -- "0..*" Mascota : es responsable de
+
+    class Trazable {
+        -_estado
+        -_historial : list
+        +estado : str
+        +historial : tuple
+        +cambiar_estado(estado_nuevo, fecha_hora, responsable, observacion)
+    }
+    class RegistroEstado {
+        +estado
+        +fecha_hora
+        +responsable
+        +observacion
+    }
+    class Muestra {
+        +id
+        +codigo
+        +orden_id
+        +tipo_analisis_id
+        +fecha_extraccion
+        +empaquetar()
+        +iniciar_transito()
+        +recibir()
+        +rechazar()
+        +analizar()
+    }
+    class Remito {
+        +id
+        +numero
+        +clinica_id
+        +laboratorio_id
+        +conservadora_id
+        +fecha_emision
+        +muestras : tuple
+        +agregar_muestra(muestra)
+        +despachar()
+        +registrar_tramo()
+        +registrar_recepcion(estado_precinto)
+        +verificar_muestras(estado_esperado)
+    }
+
+    Trazable &lt;|-- Muestra
+    Trazable &lt;|-- Remito
+    Trazable "1" *-- "1..*" RegistroEstado : historial
+    Remito "0..1" o-- "0..*" Muestra : agrupa
+
+    class EstadoMuestra {
+        &lt;&lt;abstract&gt;&gt;
+        +nombre
+        +empaquetar(muestra)
+        +iniciar_transito(muestra)
+        +recibir(muestra)
+        +rechazar(muestra)
+        +analizar(muestra)
+    }
+    class Extraida
+    class Empaquetada
+    class EnTransitoMuestra["EnTransito"]
+    class Recibida
+    class Analizada
+    class Rechazada
+    EstadoMuestra &lt;|-- Extraida
+    EstadoMuestra &lt;|-- Empaquetada
+    EstadoMuestra &lt;|-- EnTransitoMuestra
+    EstadoMuestra &lt;|-- Recibida
+    EstadoMuestra &lt;|-- Analizada
+    EstadoMuestra &lt;|-- Rechazada
+    Muestra --&gt; "1" EstadoMuestra : estado actual
+
+    class EstadoRemito {
+        &lt;&lt;abstract&gt;&gt;
+        +nombre
+        +agregar_muestra(remito, muestra)
+        +despachar(remito)
+        +registrar_tramo(remito)
+        +registrar_recepcion(remito, estado_precinto)
+    }
+    class Emitido
+    class Despachado
+    class EnTransitoRemito["EnTransito"]
+    class Recibido
+    class Rechazado
+    EstadoRemito &lt;|-- Emitido
+    EstadoRemito &lt;|-- Despachado
+    EstadoRemito &lt;|-- EnTransitoRemito
+    EstadoRemito &lt;|-- Recibido
+    EstadoRemito &lt;|-- Rechazado
+    Remito --&gt; "1" EstadoRemito : estado actual
+
+    class TransicionInvalida {
+        &lt;&lt;exception&gt;&gt;
+    }
+    EstadoMuestra ..&gt; TransicionInvalida : lanza
+    EstadoRemito ..&gt; TransicionInvalida : lanza
+  </pre>
+</section>
+
+<section id="capas">
+  <h2>Clases: capas (interfaz/ → negocio/ → dao/)</h2>
+  <div class="ayuda">
+    <ul>
+      <li>Muestra la herencia de cada capa: todas las pantallas heredan de <code>Pantalla</code>, los gestores de <code>Gestor</code> y los DAO de <code>BaseDAO</code>.</li>
+      <li>Las flechas punteadas marcan el uso entre capas para un ejemplo: empaquetar muestras.</li>
+    </ul>
+  </div>
+  <button data-descargar="capas" data-tipo="svg">Descargar SVG</button>
+  <button data-descargar="capas" data-tipo="png">Descargar PNG</button>
+  <div class="lienzo" id="lienzo-capas"></div>
+  <pre class="fuente" id="fuente-capas">
+classDiagram
+    %% Diagrama de clases por capas: interfaz/ → negocio/ → dao/.
+    %% Muestra la herencia de cada capa y el camino de una operación de ejemplo (empaquetar).
+    direction TB
+
+    class Aplicacion {
+        +pantallas
+        +cambiar_seccion()
+    }
+    class Pantalla {
+        &lt;&lt;abstract&gt;&gt;
+        +controles()*
+        +refrescar()
+        +build()
+    }
+    class PantallaClientes
+    class PantallaMascotas
+    class PantallaTurnos
+    class PantallaConsultas
+    class PantallaEmpaquetado
+    class PantallaEnvios
+    class PantallaLaboratorio
+    class PantallaReportes
+
+    class Gestor {
+        -_ruta
+        -_transaccion()
+        -_exigir(valor, mensaje)
+    }
+    class ErrorNegocio {
+        &lt;&lt;exception&gt;&gt;
+    }
+    class GestorClientes
+    class GestorMascotas
+    class GestorAtencion
+    class GestorCatalogos
+    class GestorEnvios
+    class GestorLaboratorio
+    class GestorReportes
+
+    class BaseDAO {
+        -_conexion
+        -_leer_historial()
+        -_guardar_historial()
+    }
+    class ClienteDAO
+    class MascotaDAO
+    class TurnoDAO
+    class ConsultaDAO
+    class VacunaDAO
+    class OrdenDAO
+    class MuestraDAO
+    class RemitoDAO
+    class ConservadoraDAO
+    class ComprobanteDAO
+    class CatalogoDAO
+    class ReporteDAO
+
+    class Reporte {
+        +titulo
+        +periodo
+        +agregar_tabla()
+        +agregar_grafico()
+    }
+    class TablaReporte
+    class GraficoReporte
+
+    Aplicacion "1" *-- "8" Pantalla : muestra
+    Pantalla &lt;|-- PantallaClientes
+    Pantalla &lt;|-- PantallaMascotas
+    Pantalla &lt;|-- PantallaTurnos
+    Pantalla &lt;|-- PantallaConsultas
+    Pantalla &lt;|-- PantallaEmpaquetado
+    Pantalla &lt;|-- PantallaEnvios
+    Pantalla &lt;|-- PantallaLaboratorio
+    Pantalla &lt;|-- PantallaReportes
+
+    Gestor ..&gt; ErrorNegocio : lanza
+    Gestor &lt;|-- GestorClientes
+    Gestor &lt;|-- GestorMascotas
+    Gestor &lt;|-- GestorAtencion
+    Gestor &lt;|-- GestorCatalogos
+    Gestor &lt;|-- GestorEnvios
+    Gestor &lt;|-- GestorLaboratorio
+    Gestor &lt;|-- GestorReportes
+
+    BaseDAO &lt;|-- ClienteDAO
+    BaseDAO &lt;|-- MascotaDAO
+    BaseDAO &lt;|-- TurnoDAO
+    BaseDAO &lt;|-- ConsultaDAO
+    BaseDAO &lt;|-- VacunaDAO
+    BaseDAO &lt;|-- OrdenDAO
+    BaseDAO &lt;|-- MuestraDAO
+    BaseDAO &lt;|-- RemitoDAO
+    BaseDAO &lt;|-- ConservadoraDAO
+    BaseDAO &lt;|-- ComprobanteDAO
+    BaseDAO &lt;|-- CatalogoDAO
+    BaseDAO &lt;|-- ReporteDAO
+
+    %% Ejemplo de una operación que cruza las capas: empaquetar muestras.
+    PantallaEmpaquetado ..&gt; GestorEnvios : usa
+    GestorEnvios ..&gt; RemitoDAO : usa
+    GestorEnvios ..&gt; MuestraDAO : usa
+    GestorEnvios ..&gt; ConservadoraDAO : usa
+
+    Reporte "1" *-- "0..*" TablaReporte
+    Reporte "1" *-- "0..*" GraficoReporte
+    GestorReportes ..&gt; ReporteDAO : usa
+    GestorReportes ..&gt; Reporte : arma
+  </pre>
+</section>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+
+  // Sin etiquetas HTML dentro del SVG, para poder convertirlo a PNG.
+  mermaid.initialize({ startOnLoad: false, theme: "default", htmlLabels: false,
+                       class: { htmlLabels: false }, flowchart: { htmlLabels: false } });
+
+  for (const nombre of ["der", "dominio", "capas"]) {
+    const fuente = document.getElementById(`fuente-${nombre}`).textContent;
+    const lienzo = document.getElementById(`lienzo-${nombre}`);
+    try {
+      const { svg } = await mermaid.render(`svg-${nombre}`, fuente);
+      lienzo.innerHTML = svg;
+      // Tamaño real del diagrama, con barras de desplazamiento, para que el texto se lea.
+      const dibujo = lienzo.querySelector("svg");
+      dibujo.setAttribute("width", dibujo.viewBox.baseVal.width);
+      dibujo.setAttribute("height", dibujo.viewBox.baseVal.height);
+      dibujo.style.maxWidth = "none";
+    } catch (error) {
+      lienzo.textContent = `Error al dibujar: ${error.message}`;
+    }
+  }
+
+  function descargar(url, archivo) {
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = archivo;
+    enlace.click();
+  }
+
+  document.querySelectorAll("button[data-descargar]").forEach((boton) => {
+    boton.addEventListener("click", () => {
+      const nombre = boton.dataset.descargar;
+      const svg = document.querySelector(`#lienzo-${nombre} svg`);
+      const texto = new XMLSerializer().serializeToString(svg);
+      const urlSvg = URL.createObjectURL(new Blob([texto], { type: "image/svg+xml" }));
+      if (boton.dataset.tipo === "svg") {
+        descargar(urlSvg, `${nombre}.svg`);
+        return;
+      }
+      const caja = svg.getBoundingClientRect();
+      const imagen = new Image();
+      imagen.onload = () => {
+        const escala = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = caja.width * escala;
+        canvas.height = caja.height * escala;
+        const contexto = canvas.getContext("2d");
+        contexto.fillStyle = "#ffffff";
+        contexto.fillRect(0, 0, canvas.width, canvas.height);
+        contexto.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((png) => descargar(URL.createObjectURL(png), `${nombre}.png`));
+      };
+      imagen.src = urlSvg;
+    });
+  });
+</script>
+</body>
+</html>

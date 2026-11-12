@@ -1,6 +1,7 @@
 import flet as ft
 
-from interfaz.pantalla import Pantalla, campo, fila_de_tabla, formulario, subtitulo, tabla, texto_o_none
+from interfaz.pantalla import (SOLO_DIGITOS, TELEFONO, Dialogo, Pantalla, boton_nuevo, campo, fila_de_tabla, formulario, subtitulo, tabla,
+                               tarjeta, texto_o_none, vaciar)
 from negocio.gestor_clientes import GestorClientes
 
 
@@ -11,29 +12,36 @@ class PantallaClientes(Pantalla):
         super().__init__()
         self.gestor = GestorClientes(ruta)
         self.id_en_edicion = None
-        self.dni = campo("DNI")
-        self.nombre = campo("Nombre")
-        self.apellido = campo("Apellido")
-        self.telefono = campo("Teléfono")
+        self.dni = campo("DNI *", input_filter=SOLO_DIGITOS, max_length=8)
+        self.nombre = campo("Nombre *")
+        self.apellido = campo("Apellido *")
+        self.telefono = campo("Teléfono", input_filter=TELEFONO)
         self.email = campo("Email")
         self.direccion = campo("Dirección")
         self.busqueda = campo("Buscar por apellido")
         self.tabla = tabla("DNI", "Apellido", "Nombre", "Teléfono", "Email", "Dirección", "Acciones")
+        self.dialogo = Dialogo(
+            "Nuevo cliente",
+            [formulario(self.dni, self.nombre, self.apellido, self.telefono, self.email, self.direccion)],
+            self.guardar,
+        )
 
     def controles(self):
         return [
-            formulario(self.dni, self.nombre, self.apellido, self.telefono, self.email, self.direccion),
-            ft.Row(controls=[
-                ft.Button("Guardar", on_click=self.guardar),
-                ft.OutlinedButton("Limpiar", on_click=self.limpiar),
-            ]),
-            subtitulo("Listado"),
-            ft.Row(controls=[self.busqueda, ft.OutlinedButton("Buscar", on_click=self.buscar)]),
-            ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
+            ft.Row(controls=[boton_nuevo("Nuevo cliente", self.nuevo)]),
+            tarjeta(
+                subtitulo("Listado"),
+                ft.Row(controls=[self.busqueda, ft.OutlinedButton("Buscar", icon=ft.Icons.SEARCH, on_click=self.buscar)]),
+                ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO),
+            ),
         ]
 
     def refrescar(self):
         self._mostrar(self.gestor.listar())
+
+    def nuevo(self, e):
+        self._vaciar()
+        self._abrir_dialogo(self.dialogo, "Nuevo cliente")
 
     def guardar(self, e):
         self._intentar(self._guardar)
@@ -47,12 +55,9 @@ class PantallaClientes(Pantalla):
         else:
             self.gestor.alta(*datos)
             self._informar("Cliente registrado.")
+        self._cerrar_dialogo()
         self._vaciar()
         self.refrescar()
-
-    def limpiar(self, e):
-        self._vaciar()
-        self.mensaje.value = ""
 
     def buscar(self, e):
         self._mostrar(self.gestor.buscar_por_apellido((self.busqueda.value or "").strip()))
@@ -65,7 +70,7 @@ class PantallaClientes(Pantalla):
         self.telefono.value = cliente.telefono or ""
         self.email.value = cliente.email or ""
         self.direccion.value = cliente.direccion or ""
-        self.mensaje.value = ""
+        self._abrir_dialogo(self.dialogo, f"Editar cliente {cliente.apellido}, {cliente.nombre}")
 
     def borrar(self, cliente):
         self._intentar(lambda: self._borrar(cliente))
@@ -77,16 +82,17 @@ class PantallaClientes(Pantalla):
 
     def _vaciar(self):
         self.id_en_edicion = None
-        for control in (self.dni, self.nombre, self.apellido, self.telefono, self.email, self.direccion):
-            control.value = ""
+        vaciar(self.dni, self.nombre, self.apellido, self.telefono, self.email, self.direccion)
 
     def _mostrar(self, clientes):
         self.tabla.rows = [
             fila_de_tabla(
                 [c.dni, c.apellido, c.nombre, c.telefono, c.email, c.direccion],
                 [
-                    ft.IconButton(ft.Icons.EDIT, tooltip="Editar", on_click=lambda e, c=c: self.editar(c)),
-                    ft.IconButton(ft.Icons.DELETE, tooltip="Dar de baja", on_click=lambda e, c=c: self.borrar(c)),
+                    ft.IconButton(ft.Icons.EDIT, tooltip="Editar", icon_color=ft.Colors.BLUE_700,
+                                  on_click=lambda e, c=c: self.editar(c)),
+                    ft.IconButton(ft.Icons.DELETE, tooltip="Dar de baja", icon_color=ft.Colors.RED_700,
+                                  on_click=lambda e, c=c: self.borrar(c)),
                 ],
             )
             for c in clientes
